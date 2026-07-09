@@ -1340,12 +1340,32 @@ async function callDeepSeekAPI(systemPrompt, userPrompt) {
     throw new Error('请求失败: ' + fetchErr.message);
   }
 
+  // 检查响应是否为 JSON，否则是代理/网络问题
+  const ct = response.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) {
+    const preview = (await response.text().catch(() => '')).substring(0, 200);
+    // 代理未启动返回 HTML/错误页
+    if (preview.includes('<!DOCTYPE') || preview.includes('<html')) {
+      throw new Error(
+        '代理返回了网页而非 API 数据。本地使用时请确认已启动代理：\n' +
+        '  node deepseek-proxy.js\n' +
+        '（如果已启动但仍报错，检查端口 3001 是否被其他程序占用）'
+      );
+    }
+    throw new Error('代理返回了非 JSON 内容 (content-type: ' + ct + ')。请确认代理正常运行。');
+  }
+
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
     throw new Error('API 请求失败 (' + response.status + '): ' + (err.error?.message || response.statusText));
   }
 
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch (jsonErr) {
+    throw new Error('API 返回了无法解析的内容，请确认 DeepSeek API Key 有效且代理正常');
+  }
   const text = data.choices?.[0]?.message?.content || '';
   
   if (!text.trim()) throw new Error('API 返回内容为空，请检查 Key 是否正确');
