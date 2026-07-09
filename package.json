@@ -1,0 +1,13 @@
+{
+  "name": "short-video-script-generator",
+  "version": "1.0.0",
+  "description": "短视频引流稿生成器 — 在线版（模板 + DeepSeek AI）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}

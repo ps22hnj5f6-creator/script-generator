@@ -1,0 +1,3107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>短视频引流稿生成器</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card-bg: #ffffff;
+    --text: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-tertiary: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --border: #d2d2d7;
+    --tag-bg: #e8e8ed;
+    --tag-text: #1d1d1f;
+    --danger: #ff3b30;
+    --success: #34c759;
+    --warning: #ff9500;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 24px rgba(0,0,0,0.08);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Helvetica Neue", sans-serif;
+    --font-mono: "SF Mono", "Fira Code", "Menlo", monospace;
+    --transition: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .sidebar-logo .icon { font-size: 28px; }
+  .sidebar-logo h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    margin-bottom: -12px;
+  }
+
+  /* Type selector */
+  .type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .type-btn {
+    padding: 10px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card-bg);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: var(--transition);
+    text-align: center;
+    line-height: 1.3;
+  }
+  .type-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .type-btn.active {
+    border-color: var(--accent);
+    background: rgba(0,113,227,0.06);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Batch count selector */
+  .batch-row {
+    display: flex;
+    gap: 8px;
+  }
+  .batch-btn {
+    flex: 1;
+    padding: 8px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card-bg);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: var(--transition);
+    text-align: center;
+  }
+  .batch-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .batch-btn.active {
+    border-color: var(--accent);
+    background: rgba(0,113,227,0.06);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* AI mode toggle */
+  .ai-toggle-row {
+    display: flex;
+    gap: 8px;
+  }
+  .ai-mode-btn {
+    flex: 1;
+    padding: 8px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card-bg);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: var(--transition);
+    text-align: center;
+  }
+  .ai-mode-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .ai-mode-btn.active {
+    border-color: #8b5cf6;
+    background: rgba(139,92,246,0.06);
+    color: #8b5cf6;
+    font-weight: 600;
+  }
+
+  /* AI config */
+  .ai-config {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .api-key-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-family: var(--font);
+    color: var(--text);
+    background: var(--card-bg);
+    outline: none;
+    transition: var(--transition);
+  }
+  .api-key-input:focus { border-color: #8b5cf6; }
+  .api-model-select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-family: var(--font);
+    color: var(--text);
+    background: var(--card-bg);
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* Generate button */
+
+  .btn-generate {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    letter-spacing: -0.2px;
+  }
+  .btn-generate:hover { background: var(--accent-hover); transform: translateY(-0.5px); box-shadow: 0 2px 8px rgba(0,113,227,0.3); }
+  .btn-generate:active { transform: translateY(0); }
+
+  /* Stats */
+  .sidebar-stats {
+    background: var(--card-bg);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+  }
+  .stats-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+  .stats-label { color: var(--text-secondary); }
+  .stats-value { font-weight: 600; color: var(--accent); }
+
+  .sidebar-footer {
+    margin-top: auto;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn-sm {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--card-bg);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-secondary);
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm.danger { color: var(--danger); border-color: transparent; }
+  .btn-sm.danger:hover { background: rgba(255,59,48,0.08); }
+
+  /* ===== Main Content ===== */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .toolbar-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .toolbar-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--tag-bg);
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .toolbar-right { display: flex; gap: 8px; }
+
+  .btn-icon {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card-bg);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-icon.copied { border-color: var(--success); color: var(--success); background: rgba(52,199,89,0.06); }
+
+  /* Script area */
+  .script-area {
+    flex: 1;
+    padding: 32px 40px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  #scriptResults { width: 100%; display: flex; flex-direction: column; align-items: center; }
+
+  /* Batch results grid */
+  .script-grid {
+    width: 100%;
+    max-width: 1080px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .script-grid.single { grid-template-columns: 1fr; max-width: 680px; }
+
+  /* Loading indicator */
+  #scriptLoading {
+    width: 100%;
+    max-width: 680px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 48px 32px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  #scriptLoading .loading-spinner {
+    width: 40px; height: 40px;
+    margin: 0 auto 16px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #scriptLoading .loading-text {
+    font-size: 15px; font-weight: 600; color: var(--text);
+    margin-bottom: 6px;
+  }
+  #scriptLoading .loading-sub {
+    font-size: 13px; color: var(--text-secondary);
+  }
+  #scriptLoading .loading-progress {
+    margin-top: 14px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  #scriptLoading .loading-progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.2s ease;
+  }
+
+  .script-card {
+    width: 100%;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    position: relative;
+    transition: var(--transition);
+  }
+  .script-card .card-number {
+    position: absolute;
+    top: 12px; right: 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(0,113,227,0.08);
+    padding: 2px 10px;
+    border-radius: 10px;
+  }
+  .script-card .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .card-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card-bg);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: var(--transition);
+  }
+  .card-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .card-btn.copied { border-color: var(--success); color: var(--success); background: rgba(52,199,89,0.06); }
+
+  .script-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-tertiary);
+    max-width: 680px;
+    width: 100%;
+  }
+  .script-empty .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+  .script-empty p { font-size: 14px; line-height: 1.6; }
+
+  .script-text {
+    font-size: 16px;
+    line-height: 1.85;
+    color: var(--text);
+    letter-spacing: 0.2px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Structure highlight */
+  .segment-label {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 8px;
+    vertical-align: 2px;
+  }
+  .seg-hook { background: #ffebee; color: #c62828; }
+  .seg-negate { background: #fff3e0; color: #e65100; }
+  .seg-hint { background: #e8f5e9; color: #1b5e20; }
+  .seg-cta { background: #e3f2fd; color: #0d47a1; }
+
+  .script-meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .meta-tag {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: var(--tag-bg);
+    color: var(--text-secondary);
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1d1d1f;
+    color: white;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ===== Modal ===== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+  .modal {
+    background: var(--card-bg);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 560px;
+    padding: 28px;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .modal .subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+
+  .modal textarea {
+    width: 100%;
+    min-height: 140px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.7;
+    resize: vertical;
+    outline: none;
+    transition: var(--transition);
+  }
+  .modal textarea:focus { border-color: var(--accent); }
+
+  .modal select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: var(--font);
+    outline: none;
+    margin-bottom: 12px;
+    background: white;
+    cursor: pointer;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .btn-cancel {
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card-bg);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-secondary);
+    transition: var(--transition);
+  }
+  .btn-cancel:hover { background: #f5f5f7; }
+  .btn-confirm {
+    padding: 10px 24px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .btn-confirm:hover { background: var(--accent-hover); }
+  .btn-confirm.warn { background: var(--warning); }
+  .btn-confirm.warn:hover { background: #e68600; }
+
+  /* ===== Knowledge Panel ===== */
+  .kb-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 360px;
+    background: var(--card-bg);
+    border-left: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+  }
+  .kb-panel.open { transform: translateX(0); }
+
+  .kb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .kb-header h3 { font-size: 16px; font-weight: 700; }
+  .kb-close {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: var(--tag-bg);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: var(--transition);
+  }
+  .kb-close:hover { background: #d2d2d7; }
+
+  .kb-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .kb-item {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+    position: relative;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .kb-item:hover { border-color: var(--accent); }
+  .kb-item .kb-type {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .kb-item .kb-text {
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .kb-item .kb-delete {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-tertiary);
+    opacity: 0;
+    transition: var(--transition);
+  }
+  .kb-item:hover .kb-delete { opacity: 1; }
+  .kb-item .kb-delete:hover { color: var(--danger); background: rgba(255,59,48,0.08); }
+
+  .kb-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* Loading pulse */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .generating {
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  /* History */
+  .history-area {
+    padding: 0 28px 20px;
+    display: none;
+  }
+  .history-area.show { display: block; }
+  .history-area h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    padding: 0 12px;
+  }
+  .history-grid {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 0 8px;
+  }
+  .history-item {
+    min-width: 200px;
+    max-width: 240px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card-bg);
+    cursor: pointer;
+    transition: var(--transition);
+    flex-shrink: 0;
+  }
+  .history-item:hover { border-color: var(--accent); }
+  .history-item .h-type {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .history-item .h-preview {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #b0b0b8; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span class="icon">🎬</span>
+    <h1>引流稿生成器</h1>
+  </div>
+
+  <div class="section-label">脚本类型</div>
+  <div class="type-grid" id="typeGrid">
+    <button class="type-btn active" data-type="news">📰 新闻突发型</button>
+    <button class="type-btn" data-type="crisis">⚠️ 危机预警型</button>
+    <button class="type-btn" data-type="reverse">🔄 反认知型</button>
+    <button class="type-btn" data-type="story">📖 故事沉浸型</button>
+    <button class="type-btn" data-type="dialogue">💬 对话剧情型</button>
+    <button class="type-btn" data-type="record">🏆 战绩背书型</button>
+  </div>
+
+  <div class="section-label">生成数量</div>
+  <div class="batch-row" id="batchRow">
+    <button class="batch-btn active" data-batch="1">1 条</button>
+    <button class="batch-btn" data-batch="3">3 条</button>
+    <button class="batch-btn" data-batch="5">5 条</button>
+  </div>
+
+
+  <div class="section-label" style="margin-top:4px;">🤖 AI 模型</div>
+  <div class="ai-toggle-row">
+    <button class="ai-mode-btn active" data-mode="template" id="modeTemplate">📋 模板</button>
+    <button class="ai-mode-btn" data-mode="deepseek" id="modeDeepseek">🧠 AI</button>
+  </div>
+  <div class="ai-config" id="aiConfig" style="display:none;">
+    <input type="password" class="api-key-input" id="apiKeyInput" placeholder="输入 DeepSeek API Key">
+    <select class="api-model-select" id="modelSelect">
+      <option value="deepseek-chat">DeepSeek V3（快速）</option>
+      <option value="deepseek-reasoner">DeepSeek R1（深度）</option>
+    </select>
+    <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px;">
+      Key 仅存储在本地浏览器，不会上传到任何服务器
+    </div>
+    <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--text-secondary);cursor:pointer;">
+      <input type="checkbox" id="proxyToggle" checked style="accent-color:var(--accent);">
+      使用本地代理（需先启动 node deepseek-proxy.js）
+    </label>
+  </div>
+
+  <button class="btn-generate" id="btnGenerate">✨ 生成引流稿</button>
+
+  <div class="sidebar-stats">
+    <div class="stats-row">
+      <span class="stats-label">知识库脚本</span>
+      <span class="stats-value" id="statTotal">0 条</span>
+    </div>
+    <div class="stats-row" style="margin-top: 6px;">
+      <span class="stats-label">已生成历史</span>
+      <span class="stats-value" id="statGenerated">0 条</span>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="btn-sm" id="btnFeed">📥 投喂爆款稿</button>
+    <button class="btn-sm" id="btnKb">📚 知识库</button>
+    <button class="btn-sm" id="btnSeed">🌱 预置种子</button>
+    <button class="btn-sm danger" id="btnClear">清空数据</button>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <span class="toolbar-title" id="toolbarTitle">新闻突发型</span>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn-icon" id="btnCopy" disabled>📋 复制</button>
+      <button class="btn-icon" id="btnRegenerate" disabled>🔄 换一版</button>
+    </div>
+  </div>
+
+  <div class="script-area" id="scriptArea">
+    <div class="script-empty" id="scriptEmpty">
+      <div class="icon">✍️</div>
+      <p>选择类型和数量<br>点击「生成引流稿」开始创作</p>
+      <p style="font-size:12px;margin-top:8px;color:var(--text-tertiary);">
+        投喂你的爆款稿件可以让生成更精准
+      </p>
+    </div>
+    <div id="scriptLoading" style="display:none;"></div>
+    <div id="scriptResults" style="display:none;"></div>
+  </div>
+
+  <div class="history-area" id="historyArea">
+    <h4>📝 最近生成</h4>
+    <div class="history-grid" id="historyGrid"></div>
+  </div>
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Feed Modal -->
+<div class="modal-overlay" id="feedModal">
+  <div class="modal">
+    <h2>📥 投喂爆款短视频稿</h2>
+    <p class="subtitle">批量粘贴你的爆款脚本，<strong>系统会按自然段自动拆分</strong>（空行分隔的每一段 = 一条视频稿），一次性批量学习，让后续生成更精准。</p>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;">统一类型：</span>
+      <select id="feedType" style="flex:1;">
+        <option value="auto">🤖 逐条自动识别（推荐）</option>
+        <option value="news">📰 新闻突发型</option>
+        <option value="crisis">⚠️ 危机预警型</option>
+        <option value="reverse">🔄 反认知型</option>
+        <option value="story">📖 故事沉浸型</option>
+        <option value="dialogue">💬 对话剧情型</option>
+        <option value="record">🏆 战绩背书型</option>
+      </select>
+    </div>
+    <textarea id="feedText" placeholder="粘贴多条短视频稿，用空行分隔每条...&#10;&#10;例如：&#10;有子弹的朋友们，我们的春天真的来了...不知道的直接进直播间。&#10;&#10;赶紧调仓，因为接下来科技赛道真的要变脸了...进我直播间，抓紧时间过来！&#10;&#10;有人说我马后炮？你来我直播间看两天就知道了...点头像进来，先看10分钟。"></textarea>
+    <div id="feedPreview" style="display:none;margin:12px 0;padding:12px;background:#f0f7ff;border-radius:8px;font-size:12px;line-height:1.6;color:var(--text-secondary);"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btnFeedCancel">取消</button>
+      <button class="btn-confirm" id="btnFeedConfirm">📥 批量学习</button>
+    </div>
+  </div>
+</div>
+
+<!-- Knowledge Base Panel -->
+<div class="kb-panel" id="kbPanel">
+  <div class="kb-header">
+    <h3>📚 知识库</h3>
+    <button class="kb-close" id="btnKbClose">✕</button>
+  </div>
+  <div class="kb-list" id="kbList">
+    <div class="kb-empty">还没有投喂过稿件<br>点击「投喂爆款稿」开始构建知识库</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 短视频引流稿生成器 - 核心引擎
+// ============================================================
+
+// ----- 状态管理 -----
+const state = {
+  scriptType: 'news',
+  batchCount: 1,
+  knowledgeBase: [],
+  history: [],
+  currentScripts: []  // batch results
+};
+
+// ----- 预设种子数据（从方法论提取的核心素材）-----
+const DEFAULT_PHRASES = {
+  // === 否定目标库 ===
+  negateTargets: [
+    '科技股', '半导体', '芯片', 'CPO', 'PCB', '机器人', '固态电池',
+    '光伏', '创新药', '电力', '券商', '消费', '医药', '军工', '新能源', '白酒',
+    '光模块', '低空经济', '商业航天', '有色金属', '存储', '石油', '贵金属'
+  ],
+
+  // === 事件触发池（制造危机）===
+  eventPhrases: [
+    '刚刚盘后出现一个公开信息',
+    '明天A股开盘可能要迎来比较大的波动了',
+    '一分钟前刚弹出来的消息',
+    '今晚XX:XX出的这个消息',
+    '凌晨五点的新闻都看了没有',
+    '深夜发的新闻看到了吗',
+    '盘后出现的这个信号，我已经连续观察了好几天',
+    '老美那边又传来今天的大消息',
+    '市场出了一个更大的大消息',
+  ],
+
+  // === 情绪表达池 ===
+  emotionPhrases: [
+    '我很少这么激动过',
+    '我整个人都不太敢相信',
+    '我饭都没吃，马上赶回公司',
+    '我刚把车开出停车场，团队一个电话又把我叫回公司了',
+    '电脑都已经关了，结果团队突然把我叫了回来',
+    '我今天本来没准备加播',
+    '我激动的根本就不想吃饭',
+    '团队疯狂催我上直播',
+    '吓得我立刻准备给大家加播一场',
+    '我从来就没有这么早播过',
+    '我现在整个人都在颤抖',
+    '我们团队所有人都围在我身边讨论',
+    '收盘以后，我们几个老师一直在讨论',
+    '我刚从公司出来，又掉头回去了',
+  ],
+
+  // === 身份/权威建立池 ===
+  identityPhrases: [
+    '我们团队复盘了几个小时',
+    '我们几个老师越讨论越觉得',
+    '我们把收盘后的公开信息重新梳理了一遍',
+    '我把今天市场从头到尾重新复盘了一遍',
+    '综合各大券商的研报，一致指向了同一个方向',
+    '我连续观察了好几天',
+    '我已经记下来了，而且笔记记得非常详细',
+    '我重新坐下来复盘以后',
+  ],
+
+  // === 信息差池（制造缺口）===
+  infoGapPhrases: [
+    '大部分的股民应该还都不知道',
+    '大家都在讨论A，其实真正值得关注的是B',
+    '很多人可能把重点放错地方了',
+    '很多人一直关注的地方，其实并不是现在最值得研究的',
+    '这次市场可能真的和前几天不一样',
+    '真正值得关注的，不一定是涨了多少跌了多少',
+    '市场关注的方向正在悄悄发生变化',
+    '有一个细节很多人都忽略了',
+    '真正值得关注的是市场背后的一些变化',
+  ],
+
+  // === 收益暗示池 ===
+  benefitPhrases: [
+    '知道的人可能会少走很多弯路',
+    '这个新赛道，消息、资金、业绩三重共振',
+    '低位横盘半个多月，资金悄悄进场，主力悄悄吸筹',
+    '它不是概念，是实打实的业绩爆发期',
+    '给你看点真东西',
+    '听完以后，你再决定接下来怎么观察也不迟',
+    '我不敢说接下来一定会怎么样，但有几个变化你应该知道',
+    '这一波行情可能真的会来一个比较猛的',
+    '现在不去看，等涨起来再追，就晚了',
+    '目前位置还很低，就看你手上到底有没有',
+  ],
+
+  // === 行动指令池（CTA）===
+  ctaPhrases: [
+    '点头像来直播间，我讲十分钟',
+    '直接点头像进直播间，先听5分钟',
+    '点头像来我直播间，我正在分享',
+    '抓紧点头像进直播间，就讲十分钟，没有回放',
+    '进我直播间，我来给你分享，抓紧时间过来',
+    '点头像进来，先看10分钟',
+    '不知道的直接进直播间，正在讲重点',
+    '来我直播间，我一次性讲清楚',
+    '赶紧来我直播间，我正在分享，给你看点真东西',
+    '马上进我直播间，这次直接免费分享给大家',
+  ],
+
+  // === 否定短语池 ===
+  negatePrefixes: ['忘掉', '放下', '删除', '别再看', '别再死磕', '不要碰'],
+  negatePhrases: [
+    '这些老热点行情早就熄火，别再硬扛了',
+    '这些都不是主线了',
+    '这些老黄历别被迷了眼',
+    '还抱着这些的只会白白踏空大行情',
+    '这些位置都很高了，大资金早就悄悄换方向了',
+    '那些老赛道已经完成了历史使命',
+    '旧热点已经退潮了，新一轮主线机会已经出现',
+  ],
+
+  // === 悬念留白池 ===
+  suspensePhrases: [
+    '还不知道是什么的，马上进我直播间',
+    '想知道的，直接点头像进直播间',
+    '具体是哪个方向，短视频不方便细说',
+    '我已经连续观察了好几天，现在可以放心告诉大家',
+    '不是XX，不是YY，更不是ZZ',
+    '一个全新的方向，之前还没有什么人在关注',
+    '这个方向很特别，不是你已经想到的那些',
+  ],
+
+  // === 否定目标列表 ===
+  negateTargetList: [
+    '半导体', '芯片', 'CPO', 'PCB', '机器人', '电力', '光伏',
+    '创新药', '消费', '券商', '军工', '有色金属', '商业航天',
+    'AI算力', '固态电池', '石油', '存储', '白酒', '光模块'
+  ],
+
+  // === 各类型专用钩子 ===
+  hookNews: [
+    '明天A股开盘可能要迎来比较大的波动了，刚刚突发了这个消息',
+    '一分钟前刚弹出来的消息，今晚的重要会议也说了这个事儿',
+    '这个时间还没睡的注意了，凌晨五点的新闻都看了没有',
+    '明天开盘散户可能人都要傻了，深夜发的新闻看到了吗',
+    '不出意外，意外还是来了，美国股市盘前的全新消息',
+    '朋友们，盘后出了个消息，我刚刚才收到',
+    '刚刚盘后出现一个公开信息，我马上赶回公司',
+    '今晚XX:XX出的这个消息，东财弹窗弹出来的时候',
+  ],
+  hookCrisis: [
+    '现在还不调仓的股民，你怎么睡得着觉',
+    '赶紧调仓，因为接下来科技赛道真的要变脸了',
+    '明天开盘注意了，老美那边又传来今天的大消息',
+    '我提醒一句，最近的危险操作就是追科技',
+    '今天我必须提醒持有高位题材的朋友',
+    '手里有PCB、CPO的朋友一定要注意了',
+    '兄弟们抓紧调仓换股啊，我刚开完会回来',
+  ],
+  hookReverse: [
+    '忘掉光伏，忘掉芯片半导体，忘掉机器人这些老热点',
+    '删除电力，删除CPO，删除有色金属，本月投资新方向已经锁定',
+    '明确地告诉大家，最近的科技股不要看了',
+    '别再死磕过时的老赛道，现在资金陆续撤离前期热点',
+    '彻底大变天，别再死磕这些位置很高的了',
+    '现在啊你就忘掉半导体，忘掉商业航天，忘掉创新药',
+    '放下有色金属，放下商业航天，放下电力',
+  ],
+  hookStory: [
+    '兄弟们，我刚把车开出停车场，团队一个电话又把我叫回公司了',
+    '朋友们，我今天本来没准备加播，结果团队把几份公开资料放到一起分析以后',
+    '我刚刚还在吃饭，手机突然连续响了好几次，团队直接让我赶回公司',
+    '朋友们，我刚从公司出来，又掉头回去了',
+    '今天晚上我是真的准备休息了，电脑都已经关了',
+    '今天收盘以后，我把最近市场从头到尾重新看了一遍',
+    '兄弟们，我今天本来没准备加播',
+  ],
+  hookDialogue: [
+    '你跑了没跑了呀？前两天看你直播高位跑了。那就行了',
+    '电力跑了没有？跑了跑了，你提示完风险，我立即跑了',
+    '说你都那么有钱了，还开什么直播呢',
+    '科技走了没有？走了呀，那接下来看什么呢',
+  ],
+  hookRecord: [
+    '三月份谁先给你说的华电？四月份又是谁先给你说的长电',
+    '半导体谁先讲的，是我。商业航天谁先讲的，是我。电力谁先讲的，还是我',
+    '一个月前的电力让我们直播间一举成名，半个月前的医药又让我名声鹊起',
+    '五月份的时候别人在讲有色，我在讲电力。六月份的时候别人在讲电力，我在讲半导体',
+    '老粉都懂，之前电力、半导体哪次没带大家抓住机会',
+    '现在没人嘲笑我了吧？三月份分享电力的时候，很多人说我神棍',
+    '这下总没人质疑我了吧！五月PCB、六月半导体全都得到了大家的见证',
+    '来，这下没人怀疑我了吧？2月的电力，咱们是一战成名',
+  ],
+
+  // ====== 危机预警型专用 ======
+  crisisWarning: [
+    '现在还不调仓的股民，你怎么睡得着觉',
+    '明天开盘注意了，老美那边又传来大消息',
+    '今天我必须提醒持有高位题材的朋友',
+    '我再说一遍啊，手里还拿着这些的抓紧时间',
+    '我提醒一句，最近的危险操作',
+    '管住手啊朋友们，今天这行情不是闹着玩的',
+    '紧急提醒所有股民，尤其是还重仓这些方向的',
+  ],
+  crisisRisk: [
+    '高位题材已经开始分化，资金在悄悄撤退',
+    '不是说这些方向不行，而是很多细分已经开始泥沙俱下',
+    '别只看有没有反弹，要看资金还在不在里面',
+    '老美那边的信号已经很明确了，国内资金也在调仓',
+    '这些位置都很高了，大资金早就悄悄换方向了',
+    '一旦退潮，你想跑都来不及',
+    '这些老赛道已经完成了历史使命，别当最后一个接盘的',
+  ],
+
+  // ====== 故事沉浸型专用 ======
+  storyScene: [
+    '我刚把车开出停车场，团队一个电话又把我叫回公司了',
+    '我今天本来没准备加播，因为觉得很多内容明天再讲也来得及',
+    '我刚刚还在吃饭，手机突然连续响了好几次',
+    '我刚从公司出来，又掉头回去了',
+    '今天晚上我是真的准备休息了，电脑都已经关了',
+    '收盘以后，我们几个老师一直在讨论',
+    '今天收盘以后，我把最近市场从头到尾重新看了一遍',
+  ],
+  storyDiscovery: [
+    '结果把今天收盘后的几条公开信息放在一起看',
+    '结果团队把几份公开资料放到一起分析以后',
+    '我们几个老师越讨论越觉得',
+    '我把收盘后的公开信息重新梳理了一遍',
+    '连续观察了好几天，终于理清了头绪',
+    '看完这些资料后，我马上改变主意了',
+  ],
+
+  // ====== 对话剧情型专用 ======
+  dialogueScripts: [
+    'A：你跑了没跑了呀？\nB：前两天看你直播高位跑了。\nA：那就行了。接下来呢，把这个低位补涨的做好，反复的去做。千万别被洗下车。\nB：那具体看谁呢？\nA：现在来直播间免费告诉你。',
+    'A：电力跑了没有？\nB：跑了跑了，你提示完风险，我立即跑了。\nA：那就好，现在散户全在无脑追高电力……\nB：那咱不看电力的话有什么新方向啊？\nA：你最近是不是没有看我直播呀？锁\n定我直播间，我快锁地告诉你。',
+    'A：说你都那么有钱了，还开什么直播呢？\nB：直播间有很多粉丝也喜欢问这个问题。我跟大家说，炒股这件事，钱多钱少不重要……\nA：那你觉得接下来看什么呢？\nB：现在来直播间，我免费告诉你。',
+    'A：科技走了没有？\nB：走了呀。\nA：那接下来看什么呢？\nB：你又不是不知道，每次我看完方向，都是第一时间在直播间讲的。现在过来。',
+  ],
+
+  // ====== 战绩背书型专用 ======
+  recordProof: [
+    '三月份谁先给你说的华电？四月份又是谁先给你说的长电',
+    '半导体谁先讲的，是我。商业航天谁先讲的，是我。电力谁先讲的，还是我',
+    '一个月前的电力让我们直播间一举成名，半个月前的医药又让我名声鹊起',
+    '五月份的时候，别人在讲有色，我在讲电力。六月份的时候，别人在讲电力，我在讲半导体',
+    '现在大家伙应该认识我了吧？别人还在讲电力的时候，我给大伙讲算力',
+    '现在没人嘲笑我了吧？三月份分享电力的时候，很多人说我神棍',
+    '老粉都懂，之前电力、半导体哪次没带大家抓住机会',
+    '这下总没人质疑我了吧！五月PCB、六月半导体全都得到了大家的见证',
+  ],
+  recordTransition: [
+    '当然这些都是老黄历了，如果这些机会你都错过了，今天我再重新给你安排新的方向',
+    '现在这些咱们都不看了，因为新的方向已经出现',
+    '但是今天我不是来翻旧账的，我来给大家讲一个更新的',
+    '过去的事情就不多说了，今天讲眼下最关键的事',
+    '但是现在我要讲一个更新的方向，之前的已经翻篇了',
+    '如果前面这些你都没跟上，没关系，接下来这个方向不要再错过了',
+  ],
+  challengeCta: [
+    '废话不多说，你直接去见证就好了',
+    '你亲自来直播间见证一下',
+    '欢迎来砸场子，来我这看十分钟',
+    '不用多说，你来看一眼就知道我说的是不是真的',
+    '信不信由你，来直播间看十分钟',
+    '来，进来亲自验证，我怕你不敢来',
+  ],
+};
+const FORBIDDEN_WORDS = ["史诗级", "分享一只", "如果你还会亏钱的", "不会让你们失望", "逆风翻盘", "推荐一支", "推荐一只", "好股", "免费赠送热门股", "免费赠送优质股", "免费赠送黑马股", "免费送股票池", "免费送股票名单", "免费送热门股", "免费送优质股", "免费送黑马股", "免费赠送股票名单", "免费赠送股票池", "免费赠送股票", "免费赠送3只股", "免费赠送1只股", "免费赠送三只股", "免费赠送一只股", "免费领股", "免费赠送一只股", "免费领股", "得罪全网", "位置非常低", "主力闻风丧胆", "主力都害怕", "仅限", "限制", "仅卖", "仅有", "仅剩", "只卖", "只剩", "数量有限", "限量", "突发消息", "量化炒股", "量化选股", "AI择股", "AI炒股", "AI选股器", "AI选股", "昨天去见了一位游资大佬", "触碰了很多主力机构的利益", "神器", "佣金返现全额", "免费炒股", "零成本交易", "单笔佣金无最低限制", "低至零佣", "佣金全免", "无佣金", "零佣", "免佣", "万一免五", "未被赶超", "没被赶超", "不会让你失望", "今天买明天卖", "只选一只股票", "从未被超越", "每天一只票", "不会让你失望的", "一姐", "一哥", "可能就会复制", "可能复制", "有望复制", "散户怎么才能实现草根逆袭", "我们整个集团大楼", "你的账户可能就完全不一样了", "实现稳健投资", "封杀", "被所有讲股票的人封杀", "被所有讲股票的人举报", "传奇中的传奇", "得罪了所有讲股票的人", "做大", "最快", "最猛", "暂停交易", "偶像", "盈利先锋", "w赚到", "万赚到", "锁定买卖时机", "牛运亨通", "牛气盈天", "牛气满天", "牛转乾坤", "牛转新机", "牛来运转", "扭转乾坤", "牛气冲天", "提高中签率", "打新成功", "预测走势", "大咖精选机会", "大咖分享股票池", "大咖公开股票池", "7x24小时", "最低价", "最准", "最强", "盘前3只股", "免费送股票", "公开上涨名单", "公布上涨名单", "公开短线名单", "美股", "机构消息", "泄露机密", "揭秘", "内幕", "一国两制", "和平统一", "人才强国", "科教兴国", "百花齐放", "百家争鸣", "全面依法治国", "为人民服务", "不忘初心", "美国政策", "中美博弈", "俄乌冲突", "这只票可能会成为下一只", "走不出涨停，我直接退网", "积少成多", "马上暂停交易", "小灶票", "立竿见影", "此票必买", "一飞冲天", "账户节节高", "跟买跟卖", "严格执行", "抢头彩", "不会让您失望的", "您需要赚钱，我需要您的信任", "翻身", "名额仅剩最后", "私募合作", "原价", "0差评", "收益空间", "第一手", "高抛低吸", "内部消息", "消息票", "高管", "吊打", "涨到你怀疑人生", "新王", "所有的资金和游资都在往里面冲", "所有的资金和油资都在往里面冲", "开创了A股的先河", "跟几位财阀聊完", "在股市里面失去的", "从机构回来", "选出合适的股票", "做到快人一步", "接下来很可能直接停牌", "一知名研究所", "六部门联合发布", "大概率是可以跟着主力蹭上一波", "我的持仓成本价都已经是负数", "如果明天这几支票走不出涨停", "你的账户完全不一样了", "想要快速的放大", "跟资本圈同步起跑的时候", "正式的开始把这个股价拉上去", "换了一辆更好的车", "我不建议追了", "选出来的股票更好一些", "股票反着买别墅靠大海", "只做强势，只会做强势", "及时跟上主力节奏", "及时的跟上主力的节奏", "这个会开创了A股的先河", "再不跑真的来不及了", "小资金做成大资金", "点击进入", "机构离职", "机构辞职", "机构回来", "做强势", "合适的股票", "财阀", "韩国宴", "接下来很可能就是直冲云霄", "不建议追了", "可能就要停牌", "账户完全不一样了", "炒股你想赚钱的", "刚刚拒绝了机构私头邀请", "trading agent的项目研究成果", "知名研究院", "持股不超两小时", "规避", "精准", "盆满钵满", "比你们自己选出来的股票更好", "提前退休", "精选个股", "国际巨鳄", "多个投资机构邀请他加入", "抄底", "回锅", "退役", "操盘手", "私募", "回国", "华尔街", "头部", "魁首", "屎难吃", "冠军", "连续一字板", "一年时间能做到3000%", "从1w做到100w", "从1万做到100万", "挑战用30天时间", "想要的股票", "提前布局", "提前埋伏", "突发利空", "突发利好", "准确", "做到100万", "扯淡", "验证", "能做到3000%", "1000元如何滚成50万", "1000元如何滚成50W", "1W做到100W", "1万做到100万", "一个w", "1个w", "十个w", "10个w", "千本金", "0000本金", "000本金", "领先", "万能", "顶级", "吃口肉", "吃肉", "最后一次", "白嫖", "开挂", "百万", "吃上", "全网都", "回本", "大跌", "庄家", "0成本", "割肉", "满仓", "白嫖", "领股", "量化已经淘汰了", "不需要购买任何的炒股软件", "错过就无", "未曾有过的", "限时", "贸易战", "超跌", "极致", "收益能最大化", "首次", "暴涨", "收入不到", "超越身边", "开大会", "重磅会议", "重要会议", "牛市", "必看 瞧不起你", "很久才同意开放", "权色", "领军", "TOP1", "赚到100万", "实名呼吁", "出台", "套利", "最火", "高收益", "绝佳", "必学", "免税", "sM性", "双开", "当日盈亏", "Sora", "免费送", "数字货币", "牛逼", "最好", "今日盈亏", "内参", "零成本", "首发", "涨停", "挣得比老公多", "提前上车", "换了车", "别墅挨大海", "翻身", "跨越了阶层", "如果你一年的收入不到20W", "铺捉涨停板", "随时爆发", "准确率高达", "AI能够通过大数据算出哪些是主力正在吸收的，等到主力吸引完毕，就会正式开始把股价向上拉", "选择下车即可", "找到大资金看好的股票，让你在早上提前买，早上筹码便宜，随便买都行，但是等到下午大资金进场，抱歉，抢都抢不到了", "操盘", "开盘就封板的股票，高手教我怎么上车", "跨年妖股", "这样风险小", "赚的钱让我大吃一惊", "赚的轻松", "牛股", "直接退休", "守护你的财富安全", "有效规避风险", "能赚钱", "稳操胜券", "稳稳抓住黑马股", "可能让你少打十年工", "相信不会让你失望的", "安全性是很高的", "稳稳躺赢", "能在涨停板上轻松卖出", "即将爆发", "会爆发的股票", "会爆发的主升浪股票", "A类投资咨询机构", "私募合作不实内容", "对冲拉盘", "机构合作票", "购买内幕消息", "自营盘", "年化收益", "固定回报", "高收益回报", "快速回报", "无风险回报", "保本稳赚", "承诺保底", "返本销售", "保底收益", "包回报", "收益率", "特供等借国家", "机关专供", "领导人推荐", "机关推荐", "售罄", "售空", "再不抢就没了", "史上最低价", "没有他就", "错过即无", "卖疯了", "抢疯了", "全民抢购", "全民疯抢", "领取礼品", "点击翻转", "点击试穿", "点击有惊喜", "全民免单", "恭喜获奖", "点击领奖", "纯天然", "无敌", "特效", "祖传", "永久", "前无古人", "王者", "领袖", "巅峰", "至尊", "掌门人", "著名", "巨星", "领先上市", "创领品牌", "缔造者", "王牌", "领袖品牌", "世界领先", "遥遥领先", "随时涨价", "随时结束", "填补国内空白", "国际品质", "中国驰名商标", "国家领导人", "国家级产品", "全国销量冠军", "全国首发", "独家配方", "首选", "独家", "绝佳", "绝对", "极佳", "极品", "尖端", "顶尖", "世界级", "宇宙级", "国家级", "全球级", "一对一", "一次性收费", "一次性付费", "劲爆强势票", "压轴票", "好票", "任何费用", "分析师", "荐股", "知买知卖", "监管", "龙头股", "抄开门红", "老师的服务不会让你失望的", "不会上当的", "我需要您的一份信任", "您需要赚钱", "名额仅剩下最后", "解套", "零差评", "无一失手", "一票赚回服务费", "获利", "大妖", "妖股", "大牛", "金股", "机会空间", "准确率", "胜率", "成功率", "实盘验证"];
+
+// ============================================================
+// 6大类型的专属结构定义（基于109条原始稿验证）
+// ============================================================
+const TYPE_STRUCTURES = {
+  news: {
+    name: '新闻突发型',
+    sequence: [
+      { id: 'event', label: '事件触发', desc: '以外部消息、新闻、公告开篇制造危机感', weight: 100 },
+      { id: 'emotion', label: '情绪渲染', desc: '用个人情绪（激动/颤抖/彻夜无眠）放大紧迫感', weight: 80 },
+      { id: 'identity', label: '身份建立', desc: '团队复盘、信息来源确认，建立可信度', weight: 70 },
+      { id: 'negate', label: '否定旧方向', desc: '否定当前热门，为出新方向铺垫', weight: 90 },
+      { id: 'infoGap', label: '信息差', desc: '制造"别人不知道但我知道"的认知缺口', weight: 100 },
+      { id: 'benefit', label: '利益暗示', desc: '描摹知道了会怎样、不知道会怎样', weight: 100 },
+      { id: 'cta', label: '行动指令', desc: '催促型CTA——马上、抓紧、别错过', weight: 100 }
+    ],
+    ctaStyle: '催促型',
+    tempo: '快速、高密度时间词'
+  },
+  crisis: {
+    name: '危机预警型',
+    sequence: [
+      { id: 'warning', label: '风险警告', desc: '以反问/警告直接制造焦虑（"你怎么睡得着"）', weight: 100 },
+      { id: 'riskDetail', label: '风险点名', desc: '具体指出哪些持仓/板块有风险', weight: 100 },
+      { id: 'identity', label: '身份权威', desc: '建立"我在提醒你"的权威位置', weight: 70 },
+      { id: 'negate', label: '调仓指令', desc: '明确指令——赶紧调仓/别追/管住手', weight: 100 },
+      { id: 'newHint', label: '新方向暗示', desc: '暗示有新方向可以换仓', weight: 90 },
+      { id: 'cta', label: '行动指令', desc: '恐吓+催促型CTA', weight: 100 }
+    ],
+    ctaStyle: '恐吓+催促型',
+    tempo: '急促、反问句密集'
+  },
+  reverse: {
+    name: '反认知型',
+    sequence: [
+      { id: 'negateBulk', label: '三连否定', desc: '忘掉X、放下Y、删除Z——批量否定旧方向', weight: 100 },
+      { id: 'event', label: '事件/消息来源', desc: '否定后给出消息来源（会议现场/新闻/信息）', weight: 90 },
+      { id: 'newHint', label: '新方向暗示', desc: '一个全新的方向/赛道/细分', weight: 100 },
+      { id: 'infoGap', label: '信息差', desc: '大部分人还不知道/还没反应过来', weight: 80 },
+      { id: 'benefit', label: '利益暗示', desc: '位置还很低/资金悄悄进场', weight: 80 },
+      { id: 'cta', label: '行动指令', desc: '利诱型CTA——告诉你新的是什么', weight: 100 }
+    ],
+    ctaStyle: '利诱型',
+    tempo: '三连否定冲击力强，后续平稳'
+  },
+  story: {
+    name: '故事沉浸型',
+    sequence: [
+      { id: 'scene', label: '场景设定', desc: '停车场/吃饭/关电脑——个人化真实场景', weight: 100 },
+      { id: 'event', label: '事件触发', desc: '团队电话/资料分析/突然发现', weight: 90 },
+      { id: 'emotion', label: '情绪反应', desc: '赶回公司/改变计划/激动', weight: 80 },
+      { id: 'identity', label: '团队讨论', desc: '几个老师越讨论越觉得/团队复盘', weight: 80 },
+      { id: 'infoGap', label: '信息差', desc: '这次市场可能真的和之前不一样', weight: 100 },
+      { id: 'benefit', label: '利益暗示', desc: '有几个变化，每个在市场里的朋友都应该知道', weight: 90 },
+      { id: 'cta', label: '行动指令', desc: '邀请型CTA——来直播间我完整讲给你听', weight: 100 }
+    ],
+    ctaStyle: '邀请型',
+    tempo: '叙事节奏、娓娓道来'
+  },
+  dialogue: {
+    name: '对话剧情型',
+    sequence: [
+      { id: 'dialogue', label: '角色对话', desc: '双人对话开篇，降低广告防御', weight: 100 },
+      { id: 'authority', label: '权威暗示', desc: '通过对话间接展示"看直播有用"', weight: 90 },
+      { id: 'infoGap', label: '信息差', desc: '通过角色疑问引出信息缺口', weight: 90 },
+      { id: 'cta', label: '行动指令', desc: '自然引导——免费告诉你/直播间见', weight: 100 }
+    ],
+    ctaStyle: '自然引导型',
+    tempo: '对话节奏、轻松自然'
+  },
+  record: {
+    name: '战绩背书型',
+    sequence: [
+      { id: 'proof', label: '战绩举证', desc: '具体战绩/时间线/多次预判记录', weight: 100 },
+      { id: 'negateOld', label: '否定旧战绩', desc: '这些都过去了/现在不看了——制造新需求', weight: 90 },
+      { id: 'newHint', label: '新方向预告', desc: '一个新的方向/更新的机会', weight: 100 },
+      { id: 'infoGap', label: '信息差', desc: '大部分人还没发现的新方向', weight: 80 },
+      { id: 'cta', label: '行动指令', desc: '挑战型CTA——你来见证/来验证', weight: 100 }
+    ],
+    ctaStyle: '挑战型',
+    tempo: '先慢（战绩铺垫）后快（新方向冲刺）'
+  }
+};
+
+// ----- 各类型的组件标签映射（用于展示）-----
+const TYPE_LABELS = {
+  event: '事件', emotion: '情绪', identity: '身份', negate: '否定',
+  infoGap: '信息差', benefit: '利益', cta: 'CTA',
+  warning: '警告', riskDetail: '风险', newHint: '新方向', negateBulk: '否定',
+  scene: '场景', dialogue: '对话', authority: '权威', proof: '战绩', negateOld: '转换'
+};
+
+// ----- DeepSeek 模型配置 -----
+const DEEPSEEK_CONFIG = {
+  baseUrl: 'https://api.deepseek.com/chat/completions',
+  // 同源部署时使用相对路径，本地开发时用 localhost 代理
+  proxyUrl: (location.protocol !== 'file:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1')
+    ? '/chat/completions'
+    : 'http://localhost:3001/chat/completions',
+  models: [
+    { id: 'deepseek-chat', name: 'DeepSeek V3 (推荐)', desc: '快速、性价比高' },
+    { id: 'deepseek-reasoner', name: 'DeepSeek R1 (深度推理)', desc: '慢但更精准' }
+  ],
+  defaultModel: 'deepseek-chat',
+  maxTokens: 800,
+  temperature: 0.85
+};
+
+// ----- AI 模式状态 -----
+state.aiMode = 'template';  // 'template' | 'deepseek'
+state.aiModel = 'deepseek-chat';
+state.aiApiKey = '';
+state.useProxy = true;  // 默认使用本地代理（解决 CORS）
+
+// ============================================================
+// DeepSeek API 调用
+// ============================================================
+
+// 构建 DeepSeek 提示词
+// ====== 从种子库提取少样本范例 ======
+// 从知识库随机选一条种子稿（优先匹配当前类型）
+function pickRandomSeed(type) {
+  // 1. 从知识库中找匹配类型的
+  const sameType = state.knowledgeBase.filter(item => item.type === type);
+  if (sameType.length > 0) {
+    return sameType[Math.floor(Math.random() * sameType.length)].text;
+  }
+  
+  // 2. 知识库中没有同类型，从全部知识库随机选
+  if (state.knowledgeBase.length > 0) {
+    return state.knowledgeBase[Math.floor(Math.random() * state.knowledgeBase.length)].text;
+  }
+  
+  // 3. 知识库为空，从内置种子中选
+  const sameTypeSeeds = DEFAULT_SEEDS.filter(s => s.type === type);
+  if (sameTypeSeeds.length > 0) {
+    return sameTypeSeeds[Math.floor(Math.random() * sameTypeSeeds.length)].text;
+  }
+  
+  // 4. 最后的兜底：从全部内置种子随机选
+  return DEFAULT_SEEDS[Math.floor(Math.random() * DEFAULT_SEEDS.length)].text;
+}
+
+function buildDeepSeekPrompt(type, seedText) {
+  const systemPrompt = `你是一个资深财经分析师，从业十二年，对市场有独立的判断。你现在要用口语化的方式讲清楚一个观点，目的是引导观众进直播间听你深入分析。
+
+你的表达原则：
+- 专业但不端着。用自然的短句说话，像面对面跟你讲一个你该知道的事情。
+- 语气是笃定的、有洞察的。你知道别人不知道的东西，但你不需要大声喊。
+- 不堆砌形容词，不喊口号。用事实感和判断力来建立信任。
+- 结尾自然地过渡到"进直播间细聊"，不推销，是给你看更多。
+
+禁止：
+- 不出现暴涨、翻倍、翻番、必涨、稳赚、免费送股、推荐
+- 不出现具体板块名或股票代码，用"一个方向""一条主线"代替
+- 不列点、不分段，一气呵成
+- 不用"嘛""呀""呗""啊"这类拖尾语气词——你是专业人士，不是市井聊天`;
+
+  const userPrompt = `参考下面这条稿子的结构和节奏，用你自己的判断重新组织语言写一条。保持同样的信息密度，但表达可以更干练、更有说服力。
+
+## 参考稿：
+${seedText}
+
+## 要求：
+- 100到200字
+- 口语但不随意，笃定但不张扬
+- 直接输出，不要加标题、编号、解释`;
+
+  return { system: systemPrompt, user: userPrompt };
+}
+
+
+// 调用 DeepSeek API
+async function callDeepSeekAPI(systemPrompt, userPrompt) {
+  // 从输入框获取并清理 API Key：只保留可打印 ASCII，排除非法 Unicode
+  const rawKey = state.aiApiKey || document.getElementById('apiKeyInput').value.trim();
+  const apiKey = rawKey.replace(/[^\x20-\x7e]/g, '');
+  if (!apiKey) throw new Error('请先输入 DeepSeek API Key（仅支持英文和数字）');
+
+  const model = state.aiModel;
+  const url = state.useProxy ? DEEPSEEK_CONFIG.proxyUrl : DEEPSEEK_CONFIG.baseUrl;
+
+  // 用 Headers 对象确保所有值都是合法的 HTTP 头
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/json');
+  headers.set('Authorization', 'Bearer ' + apiKey);
+
+  const body = JSON.stringify({
+    model: model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    max_tokens: DEEPSEEK_CONFIG.maxTokens,
+    temperature: DEEPSEEK_CONFIG.temperature,
+    stream: false
+  });
+
+  let response;
+  try {
+    response = await fetch(url, { method: 'POST', headers: headers, body: body });
+  } catch (fetchErr) {
+    // 代理不可用时，给出明确的指引
+    if (state.useProxy && fetchErr.message && fetchErr.message.includes('fetch')) {
+      throw new Error(
+        '代理连接失败。请确认：\n' +
+        '1. 终端已运行: node deepseek-proxy.js\n' +
+        '2. 代理运行在 http://localhost:3001\n' +
+        '（' + fetchErr.message + '）'
+      );
+    }
+    throw new Error('请求失败: ' + fetchErr.message);
+  }
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error('API 请求失败 (' + response.status + '): ' + (err.error?.message || response.statusText));
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  
+  if (!text.trim()) throw new Error('API 返回内容为空，请检查 Key 是否正确');
+
+  return text.trim();
+}
+
+// DeepSeek 模式下的生成流程：随机挑一条种子稿，仿写
+async function generateWithDeepSeek(type) {
+  // 先用模板生成一条稿子，再让 DeepSeek 仿写润色
+  const templateScript = generateScriptRaw(type);
+  const seedText = templateScript.full;
+  const { system: systemPrompt, user: userPrompt } = buildDeepSeekPrompt(type, seedText);
+  const text = await callDeepSeekAPI(systemPrompt, userPrompt);
+  
+  // 禁词过滤
+  const hasFW = hasForbiddenWord(text);
+  const cleanText = hasFW ? censorScriptRaw(text) : text;
+  const remainingFW = hasForbiddenWord(cleanText);
+  
+  // 构建结果对象
+  const charCount = cleanText.replace(/\s/g, '').length;
+  const sentences = cleanText.split(/[。！？\n]/).filter(s => s.trim());
+  
+  const structureObj = { full: cleanText, sentenceCount: sentences.length };
+  
+  return {
+    full: cleanText,
+    structure: structureObj,
+    type,
+    charCount,
+    clean: !remainingFW,
+    dirtyWord: remainingFW || '',
+    retries: 0,
+    timestamp: new Date().toISOString(),
+    id: 'ai_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    aiGenerated: true
+  };
+}
+
+// 对纯文本进行禁词过滤（不依赖 script 对象）
+function censorScriptRaw(text) {
+  for (let retry = 0; retry < 8; retry++) {
+    const word = hasForbiddenWord(text);
+    if (!word) return text;
+    text = text.replace(new RegExp(word, 'g'), '【已过滤】');
+  }
+  return text;
+}
+
+
+// ----- 禁词检测与过滤 -----
+function hasForbiddenWord(text) {
+  const lower = text.toLowerCase();
+  for (let i = 0; i < FORBIDDEN_WORDS.length; i++) {
+    if (lower.includes(FORBIDDEN_WORDS[i].toLowerCase())) return FORBIDDEN_WORDS[i];
+  }
+  return null;
+}
+
+function censorScript(script, maxRetries = 8) {
+  for (let i = 0; i < maxRetries; i++) {
+    const found = hasForbiddenWord(script.full);
+    if (!found) return { script, clean: true, retries: i };
+    script = generateScriptRaw(script.type);
+  }
+  const found = hasForbiddenWord(script.full);
+  return { script, clean: !found, retries: maxRetries, dirtyWord: found };
+}
+
+// ----- 从文本中提取短语素材 -----
+function extractPhrasesFromScript(text) {
+  // 先按完整句子切分
+  const rawSentences = text.split(/[。！？\n]+/).filter(s => s.trim().length > 4);
+  
+  const extracted = {
+    hooks: [],
+    events: [],
+    emotions: [],
+    identities: [],
+    infoGaps: [],
+    negateBlocks: [],
+    hints: [],
+    benefits: [],
+    ctas: []
+  };
+
+  // 提取否定板块组合（匹配完整否定短语）
+  rawSentences.forEach(s => {
+    const negMatch = s.match(/(?:忘掉|放下|别再|别再看|删除|不看|不要再看|别死磕)([^，。！？\n]+)/g);
+    if (negMatch) negMatch.forEach(m => extracted.negateBlocks.push(m.trim()));
+  });
+
+  // 提取CTA（完整CTA句子）
+  rawSentences.forEach(s => {
+    if (/(?:点头像|进直播间|来直播间|抓紧时间过来|赶紧来|马上开播|正在讲|正在分享)/.test(s)) {
+      const cleaned = s.replace(/^[,，\s]+/, '').trim();
+      if (cleaned.length >= 6 && cleaned.length <= 60) extracted.ctas.push(cleaned);
+    }
+  });
+
+  // 提取情绪短语 —— 匹配完整句子，而非截断片段
+  const emotionKeywords = ['激动', '颤抖', '不敢相信', '坐不住', '彻夜无眠', '饭都没吃', '催我', '赶回'];
+  rawSentences.forEach(s => {
+    for (const kw of emotionKeywords) {
+      if (s.includes(kw)) { extracted.emotions.push(s.trim()); break; }
+    }
+  });
+
+  // 提取身份/权威短语 —— 匹配完整句子
+  const idKeywords = ['团队', '复盘', '梳理', '研报', '讨论'];
+  rawSentences.forEach(s => {
+    for (const kw of idKeywords) {
+      if (s.includes(kw)) { extracted.identities.push(s.trim()); break; }
+    }
+  });
+
+  // 提取信息差短语
+  const gapKeywords = ['不知道', '忽略', '没注意到', '不一样', '没发现', '没人看', '还没怎么涨', '还不清楚', '不是', '并不在'];
+  rawSentences.forEach(s => {
+    for (const kw of gapKeywords) {
+      if (s.includes(kw)) { extracted.infoGaps.push(s.trim()); break; }
+    }
+  });
+
+  // 提取收益暗示短语
+  const benefitKeywords = ['少走弯路', '真东西', '位置', '横盘', '主力', '主升浪', '万亿', '共振', '爆发期', '低位', '吸筹'];
+  rawSentences.forEach(s => {
+    for (const kw of benefitKeywords) {
+      if (s.includes(kw) && s.length >= 10 && s.length <= 50) {
+        extracted.benefits.push(s.trim()); break;
+      }
+    }
+  });
+
+  // 各项质量控制：过滤太短/太长/以虚词开头的碎片
+  const qualityFilter = (arr, minLen = 6, maxLen = 55) => {
+    return [...new Set(arr)]
+      .filter(s => {
+        const t = s.trim();
+        if (t.length < minLen || t.length > maxLen) return false;
+        // 过滤以虚词/标点/填充词开头的碎片
+        if (/^[，,。！？的了呢吗啊呀就还也又才便呃嗯唉]/.test(t)) return false;
+        // 过滤纯否定动词开头且太短的
+        if (t.length < 12 && /^(忘掉|放下|删除|别再|不看)/.test(t)) return false;
+        // 过滤反问句（含"吗？"但无明确信息价值）
+        if (t.includes('吗？') && t.length < 20) return false;
+        // 过滤明显重复的短语（与已有默认短语高度相似）
+        if (t.length < 15 && /^(不知道|还不清楚|还没|已经)/.test(t)) return false;
+        return true;
+      })
+      .slice(0, 12); // 每类最多12条
+  };
+
+  Object.keys(extracted).forEach(k => {
+    extracted[k] = qualityFilter(extracted[k], 6, 80);
+  });
+
+  return extracted;
+}
+
+// ----- 分析脚本结构，分解为四段 -----
+function analyzeScriptStructure(text) {
+  const sentences = text.split(/[。！？\n]+/).filter(s => s.trim().length > 3);
+  const total = sentences.length;
+
+  if (total < 3) return null;
+
+  // 简单分段：前30%为开篇钩子，接下来20%为否定，接下来30%为暗示，最后20%为CTA
+  const hookEnd = Math.max(1, Math.floor(total * 0.35));
+  const negateEnd = Math.max(hookEnd + 1, Math.floor(total * 0.55));
+  const hintEnd = Math.max(negateEnd + 1, Math.floor(total * 0.80));
+
+  return {
+    hook: sentences.slice(0, hookEnd).join('。'),
+    negate: sentences.slice(hookEnd, negateEnd).join('。'),
+    hint: sentences.slice(negateEnd, hintEnd).join('。'),
+    cta: sentences.slice(hintEnd).join('。'),
+    full: text,
+    sentenceCount: total
+  };
+}
+
+// ----- 构建短语池 -----
+function buildPhrasePool() {
+  const pool = JSON.parse(JSON.stringify(DEFAULT_PHRASES));
+
+  // 从知识库中补充
+  state.knowledgeBase.forEach(item => {
+    if (item.extracted) {
+      if (item.extracted.hooks?.length) {
+        const hookKey = 'hook' + item.type.charAt(0).toUpperCase() + item.type.slice(1);
+        if (pool[hookKey]) pool[hookKey].push(...item.extracted.hooks);
+      }
+      if (item.extracted.events?.length) {
+        pool.eventPhrases.push(...item.extracted.events);
+      }
+      if (item.extracted.emotions?.length) {
+        pool.emotionPhrases.push(...item.extracted.emotions);
+      }
+      if (item.extracted.identities?.length) {
+        pool.identityPhrases.push(...item.extracted.identities);
+      }
+      if (item.extracted.infoGaps?.length) {
+        pool.infoGapPhrases.push(...item.extracted.infoGaps);
+      }
+      if (item.extracted.benefits?.length) {
+        pool.benefitPhrases.push(...item.extracted.benefits);
+      }
+      if (item.extracted.ctas?.length) {
+        pool.ctaPhrases.push(...item.extracted.ctas);
+      }
+      if (item.extracted.negateBlocks?.length) {
+        pool.negatePhrases.push(...item.extracted.negateBlocks);
+      }
+      if (item.extracted.hints?.length) {
+        pool.suspensePhrases.push(...item.extracted.hints);
+      }
+    }
+  });
+
+  // 去重
+  Object.keys(pool).forEach(k => {
+    if (Array.isArray(pool[k])) pool[k] = [...new Set(pool[k])];
+  });
+
+  return pool;
+}
+
+// ----- 随机选取 -----
+function pickRandom(arr, count = 1, avoidSet = new Set()) {
+  if (!arr || arr.length === 0) return count === 1 ? '' : [];
+  const available = arr.filter(item => !avoidSet.has(item));
+  const source = available.length > 0 ? available : arr;
+
+  if (count === 1) {
+    return source[Math.floor(Math.random() * source.length)];
+  }
+
+  const result = [];
+  const used = new Set();
+  const maxAttempts = Math.min(count * 3, source.length * 2);
+
+  for (let i = 0; i < Math.min(count, source.length); i++) {
+    let attempts = 0;
+    let item;
+    do {
+      item = source[Math.floor(Math.random() * source.length)];
+      attempts++;
+    } while (used.has(item) && attempts < maxAttempts);
+    used.add(item);
+    result.push(item);
+  }
+
+  return result;
+}
+
+// ----- 随机选择N个板块名用于否定 -----
+function pickNegateTargets(pool, count = 3) {
+  const targets = pool.negateTargetList.filter(t => t.length <= 8);
+  const unique = [...new Set(targets)];
+  if (unique.length < count) return unique;
+  return pickRandom(unique, count);
+}
+
+// ============================================================
+// 6大类型的专属生成器（每个类型完全独立的生成逻辑）
+// ============================================================
+
+// ----- 基础工具函数 -----
+function pick2(arr) {
+  if (!arr || arr.length === 0) return '';
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function pickN(arr, n) {
+  if (!arr || arr.length === 0) return [];
+  const pool = [...arr];
+  const result = [];
+  for (let i = 0; i < Math.min(n, pool.length); i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    result.push(pool.splice(idx, 1)[0]);
+  }
+  return result;
+}
+
+function maybe(decimalChance, fn) {
+  if (Math.random() < decimalChance) return fn();
+  return null;
+}
+
+
+// 安全拼接 - 去除尾部标点避免双句号
+function joinClean(parts, sep) {
+  return parts.filter(Boolean).map(p => ('' + p).replace(/[。！？]+$/g, '')).join(sep || '。');
+}
+
+// ============================================================
+// 6大类型的专属生成器（叙述模板系统）
+// 核心设计：用完整叙述模板替代逐环节拼接，确保每一条都通顺自然
+// ============================================================
+
+// ----- 叙述级素材构建器（产出完整自然句，而非孤立短语）-----
+
+// 否定块：返回一句完整的、自然的否定陈述
+function buildNegateSentence(pool) {
+  const targets = pickN(pool.negateTargetList, 3);
+  const styles = [
+    () => `忘掉${targets[0]}，放下${targets[1]}，别再死磕${targets[2]}，${pick2(pool.negatePhrases)}`,
+    () => `现在啊你就忘掉${targets[0]}，忘掉${targets[1]}，忘掉${targets[2]}，${pick2(pool.negatePhrases)}`,
+    () => `删除${targets[0]}，删除${targets[1]}，删除${targets[2]}，${pick2(pool.negatePhrases)}`,
+    () => `放下${targets[0]}，放下${targets[1]}，放下${targets[2]}，${pick2(pool.negatePhrases)}`,
+    () => `别再死磕${targets[0]}、${targets[1]}、${targets[2]}这些老赛道了，${pick2(pool.negatePhrases)}`
+  ];
+  return pick2(styles)();
+}
+
+// 软否定（不带三连动词，更自然地融入对话）
+function buildNegateLight(pool) {
+  const targets = pickN(pool.negateTargetList, 2);
+  const styles = [
+    () => `你现在还盯着${targets[0]}和${targets[1]}的话，方向可能就偏了`,
+    () => `很多人还在看${targets[0]}、${targets[1]}，其实重心早就不在那了`,
+    () => `${targets[0]}和${targets[1]}这些，已经不是现在最值得关注的了`
+  ];
+  return pick2(styles)();
+}
+
+// 安全选取身份短语（避免"我们我们..."、"我们我..."重复）
+function pickIdentity(pool) {
+  const phrase = pick2(pool.identityPhrases);
+  if (!phrase) return '';
+  // 模板中已前置"我们"，所以去掉短语开头的"我们"或"我"
+  return phrase.replace(/^我们[,\s，]*/, '').replace(/^我[,\s，]*/, '');
+}
+
+// 信息差句：自然表达"你知道的还不够"
+function buildInfoGapSentence(pool) {
+  const styles = [
+    () => pick2(pool.infoGapPhrases),
+    () => `说实话，${pick2(pool.infoGapPhrases)}`,
+    () => `${pick2(pool.infoGapPhrases)}，但大部分人还没注意到`,
+    () => `我跟你说句实话，${pick2(pool.infoGapPhrases)}`
+  ];
+  return pick2(styles)();
+}
+
+// 利益暗示句
+function buildBenefitSentence(pool) {
+  const styles = [
+    () => pick2(pool.benefitPhrases),
+    () => `${pick2(pool.benefitPhrases)}，就看你能不能抓住了`,
+    () => `${pick2(pool.benefitPhrases)}，这次真的不一样`,
+    () => `你要知道了，${pick2(pool.benefitPhrases)}`
+  ];
+  return pick2(styles)();
+}
+
+// 新方向句（不说具体是什么，但暗示存在）
+function buildNewDirection(pool) {
+  const styles = [
+    () => '一个全新的方向已经浮出水面',
+    () => '新的主线方向已经出现了',
+    () => '有一个方向值得你重点关注',
+    () => '真正值得看的方向，可能和你现在想的完全不一样',
+    () => '新的核心方向，我已经连续观察了好几天',
+    () => '这个方向很特别，之前还没什么人在关注'
+  ];
+  return pick2(styles)();
+}
+
+// 危机风险详细描述
+function buildRiskDetail(pool) {
+  const riskTargets = pickN(pool.negateTargetList, 2);
+  const styles = [
+    () => `尤其是手里还拿着${riskTargets.join('、')}的朋友，${pick2(pool.crisisRisk)}`,
+    () => `重仓${riskTargets.join('、')}的注意了，${pick2(pool.crisisRisk)}`,
+    () => `${riskTargets.join('、')}这些方向，${pick2(pool.crisisRisk)}`
+  ];
+  return pick2(styles)();
+}
+
+
+// ====== 类型1：新闻突发型 ======
+// 核心：事件+情绪融合开篇 → 信息差 → 行动，否定可选
+function genNews(pool, cfg) {
+  const templates = [
+    // 模板A：事件+情绪融合 → 信息差 → 利益 → CTA（简洁有力，4环）
+    () => {
+      const event = pick2(pool.hookNews || pool.eventPhrases);
+      const emotion = pick2(pool.emotionPhrases);
+      const infoGap = buildInfoGapSentence(pool);
+      const benefit = buildBenefitSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${event}，${emotion}。${infoGap}。${benefit}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const extraGap = pick2(pool.infoGapPhrases);
+        full = full.replace(benefit + '。', extraGap + '。' + benefit + '。');
+      }
+      return full;
+    },
+    // 模板B：否定先入 → 事件 → 情绪 → 信息差 → CTA
+    () => {
+      const negate = buildNegateSentence(pool);
+      const event = pick2(pool.eventPhrases);
+      const emotion = pick2(pool.emotionPhrases);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${negate}。${event}，${emotion}。${infoGap}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const benefit = buildBenefitSentence(pool);
+        full = full.replace(cta, benefit + '。' + cta);
+      }
+      return full;
+    },
+    // 模板C：事件 → 情绪 → 团队分析 → 信息差 → CTA（身份自然融入）
+    () => {
+      const event = pick2(pool.hookNews || pool.eventPhrases);
+      const emotion = pick2(pool.emotionPhrases);
+      const identity = pickIdentity(pool);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${event}，${emotion}。我们${identity}。${infoGap}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const benefit = buildBenefitSentence(pool);
+        full = full.replace(cta, benefit + '。' + cta);
+      }
+      return full;
+    },
+    // 模板D：事件 → 否定 → 信息差 → 利益 → CTA
+    () => {
+      const event = pick2(pool.eventPhrases);
+      const negate = buildNegateSentence(pool);
+      const infoGap = buildInfoGapSentence(pool);
+      const benefit = buildBenefitSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${event}。${negate}。${infoGap}。${benefit}。${cta}`;
+      return full;
+    },
+  ];
+  const tpl = pick2(templates);
+  const full = tpl();
+  return { full, structure: { full }, sentenceCount: full.split(/[。！？]/).filter(s => s.trim()).length };
+}
+
+// ====== 类型2：危机预警型 ======
+// 核心：警告 → 风险 → 调仓指令 → CTA
+function genCrisis(pool, cfg) {
+  const templates = [
+    () => {
+      const warning = pick2(pool.crisisWarning);
+      const riskDetail = buildRiskDetail(pool);
+      const negate = '赶紧调仓！' + pick2(pool.negatePhrases);
+      const newHint = buildNewDirection(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${warning}？${riskDetail}。${negate}。${newHint}，${cta}`;
+      return full;
+    },
+    () => {
+      const warning = pick2(pool.crisisWarning);
+      const riskDetail = buildRiskDetail(pool);
+      const negate = '赶紧调仓，' + pick2(pool.negatePhrases);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${warning}，${riskDetail}。${negate}。${infoGap}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const extraRisk = pick2(pool.crisisRisk);
+        full = full.replace(negate + '。', negate + '。' + extraRisk + '。');
+      }
+      return full;
+    },
+    () => {
+      const warning = pick2(pool.crisisWarning);
+      const riskDetail = buildRiskDetail(pool);
+      const negate = '听我一句劝，' + pick2(pool.negatePhrases);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${warning}！${riskDetail}。${negate}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const newHint = pick2(pool.suspensePhrases);
+        full = full.replace(cta, newHint + '。' + cta);
+      }
+      return full;
+    },
+  ];
+  const tpl = pick2(templates);
+  const full = tpl();
+  return { full, structure: { full }, sentenceCount: full.split(/[。！？]/).filter(s => s.trim()).length };
+}
+
+// ====== 类型3：反认知型 ======
+// 核心：三连否定 → 新方向 → 信息差 → CTA
+function genReverse(pool, cfg) {
+  const templates = [
+    () => {
+      const negate = buildNegateSentence(pool);
+      const newDir = buildNewDirection(pool);
+      const infoGap = buildInfoGapSentence(pool);
+      const benefit = buildBenefitSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${negate}。${newDir}。${infoGap}。${benefit}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const extraBenefit = pick2(pool.benefitPhrases);
+        full = full.replace(cta, extraBenefit + '。' + cta);
+      }
+      return full;
+    },
+    () => {
+      const negate = buildNegateSentence(pool);
+      const event = pick2(pool.eventPhrases);
+      const newDir = buildNewDirection(pool);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${negate}。${event}。${newDir}。${infoGap}。${cta}`;
+      return full;
+    },
+    () => {
+      const negate = buildNegateSentence(pool);
+      const identity = pickIdentity(pool);
+      const newDir = buildNewDirection(pool);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${negate}。我们${identity}。${newDir}。${infoGap}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const benefit = buildBenefitSentence(pool);
+        full = full.replace(cta, benefit + '。' + cta);
+      }
+      return full;
+    },
+  ];
+  const tpl = pick2(templates);
+  const full = tpl();
+  return { full, structure: { full }, sentenceCount: full.split(/[。！？]/).filter(s => s.trim()).length };
+}
+
+// ====== 类型4：故事沉浸型 ======
+// 核心：场景 → 发现 → 信息差 → CTA（自然叙事，最少环节）
+function genStory(pool, cfg) {
+  const templates = [
+    () => {
+      const scene = pick2(pool.storyScene);
+      const discovery = pick2(pool.storyDiscovery);
+      const identity = pick2(pool.identityPhrases);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${scene}，${discovery}，${identity}，${infoGap}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const benefit = pick2(pool.benefitPhrases);
+        full = full.replace(cta, benefit + '。' + cta);
+      }
+      return full;
+    },
+    () => {
+      const scene = pick2(pool.storyScene);
+      const discovery = pick2(pool.storyDiscovery);
+      const infoGap = buildInfoGapSentence(pool);
+      const benefit = pick2(pool.benefitPhrases);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${scene}，${discovery}。${infoGap}。${benefit}。${cta}`;
+      return full;
+    },
+    () => {
+      const scene = pick2(pool.storyScene);
+      const discovery = pick2(pool.storyDiscovery);
+      const negate = buildNegateLight(pool);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${scene}。${discovery}，${negate}。${infoGap}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const benefit = buildBenefitSentence(pool);
+        full = full.replace(cta, benefit + '。' + cta);
+      }
+      return full;
+    },
+  ];
+  const tpl = pick2(templates);
+  const full = tpl();
+  return { full, structure: { full }, sentenceCount: full.split(/[。！？]/).filter(s => s.trim()).length };
+}
+
+// ====== 类型5：对话剧情型 ======
+function genDialogue(pool, cfg) {
+  const dialogue = pick2(pool.dialogueScripts);
+  return { full: dialogue, structure: { full: dialogue }, sentenceCount: dialogue.split(/[。！？\n\r]+/).filter(s => s.trim()).length };
+}
+
+// ====== 类型6：战绩背书型 ======
+// 核心：战绩 → 转折 → 新方向 → CTA
+function genRecord(pool, cfg) {
+  const templates = [
+    () => {
+      const proof = pick2(pool.recordProof);
+      const transition = pick2(pool.recordTransition);
+      const newHint = buildNewDirection(pool);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.challengeCta);
+      let full = `${proof}。${transition}。${newHint}。${infoGap}。${cta}`;
+      return full;
+    },
+    () => {
+      const proof = pick2(pool.recordProof);
+      const transition = pick2(pool.recordTransition);
+      const newHint = pick2(pool.suspensePhrases);
+      const cta = pick2(pool.challengeCta);
+      let full = `${proof}。${transition}。${newHint}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const infoGap = buildInfoGapSentence(pool);
+        full = full.replace(newHint + '。', newHint + '。' + infoGap + '。');
+      }
+      return full;
+    },
+    () => {
+      const proof = pick2(pool.recordProof);
+      const transition = pick2(pool.recordTransition);
+      const cta = pick2(pool.challengeCta);
+      let full = `${proof}。${transition}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const infoGap = buildInfoGapSentence(pool);
+        full = full.replace(transition + '。', transition + '。' + infoGap + '。');
+      }
+      return full;
+    },
+  ];
+  const tpl = pick2(templates);
+  const full = tpl();
+  return { full, structure: { full }, sentenceCount: full.split(/[。！？]/).filter(s => s.trim()).length };
+}
+
+// ====== 月度热点板块（用于生成否定目标）======
+function getMonthlyHotSectors() {
+  const sectorCycle = [
+    ['芯片', '半导体', 'AI算力', '机器人', 'CPO'],        // 1月
+    ['电力', '光伏', '储能', '新能源', '有色金属'],       // 2月
+    ['创新药', '医药', '消费', '白酒', '券商'],          // 3月
+    ['光模块', 'PCB', '存储', '军工', '通信设备'],       // 4月
+    ['电力', '商业航天', '低空经济', '机器人', 'AI应用'], // 5月
+    ['半导体', '芯片', '消费电子', 'PCB', '光模块'],      // 6月
+    ['AI应用', '机器人', '固态电池', 'CPO', '科技'],      // 7月
+    ['电力', '新能源', '光伏', '储能', '有色金属'],        // 8月
+    ['券商', '金融科技', '保险', '银行', '地产'],          // 9月
+    ['医药', '创新药', '消费', '白酒', '医美'],            // 10月
+    ['半导体', '芯片', '算力', '信创', 'AI'],              // 11月
+    ['煤炭', '石油', '电力', '天然气', '公用事业']         // 12月
+  ];
+  const now = new Date();
+  const prevMonth = (now.getMonth() - 1 + 12) % 12;
+  return sectorCycle[prevMonth];
+}
+
+// ====== 统一分发（原始生成，不含禁词过滤）======
+function generateScriptRaw(type) {
+  const pool = buildPhrasePool();
+  // 否定目标使用上月市场表现好的板块
+  pool.negateTargetList = getMonthlyHotSectors();
+  const cfg = { extraSections: 1 };
+  
+  let result;
+  switch (type) {
+    case 'news':     result = genNews(pool, cfg); break;
+    case 'crisis':   result = genCrisis(pool, cfg); break;
+    case 'reverse':  result = genReverse(pool, cfg); break;
+    case 'story':    result = genStory(pool, cfg); break;
+    case 'dialogue': result = genDialogue(pool, cfg); break;
+    case 'record':   result = genRecord(pool, cfg); break;
+    default:         result = genNews(pool, cfg); break;
+  }
+  
+  const charCount = result.full.replace(/\s/g, '').length;
+  result.structure.sentenceCount = result.sentenceCount;
+  
+  return {
+    full: result.full,
+    structure: result.structure,
+    type,
+    charCount,
+    timestamp: new Date().toISOString(),
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+  };
+}
+
+// ====== 带禁词过滤的生成（UI调用的入口）======
+function generateScript(type) {
+  const script = generateScriptRaw(type);
+  return censorScript(script);
+}
+
+// ============================================================
+// UI 交互
+// ============================================================
+
+// ----- Toast -----
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ----- 类型选择 -----
+document.getElementById('typeGrid').addEventListener('click', (e) => {
+  const btn = e.target.closest('.type-btn');
+  if (!btn) return;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.scriptType = btn.dataset.type;
+  updateToolbar();
+});
+
+// ----- AI 模式切换 -----
+document.getElementById('modeTemplate').addEventListener('click', () => {
+  state.aiMode = 'template';
+  document.getElementById('modeTemplate').classList.add('active');
+  document.getElementById('modeDeepseek').classList.remove('active');
+  document.getElementById('aiConfig').style.display = 'none';
+  document.getElementById('btnGenerate').textContent = '✨ 生成引流稿';
+});
+
+document.getElementById('modeDeepseek').addEventListener('click', () => {
+  state.aiMode = 'deepseek';
+  document.getElementById('modeDeepseek').classList.add('active');
+  document.getElementById('modeTemplate').classList.remove('active');
+  document.getElementById('aiConfig').style.display = 'block';
+  document.getElementById('btnGenerate').textContent = '🧠 AI 生成引流稿';
+});
+
+// 保存/恢复 API Key
+document.getElementById('apiKeyInput').addEventListener('input', (e) => {
+  state.aiApiKey = e.target.value;
+  try { localStorage.setItem('ds_api_key', e.target.value); } catch {}
+});
+document.getElementById('modelSelect').addEventListener('change', (e) => {
+  state.aiModel = e.target.value;
+  try { localStorage.setItem('ds_model', e.target.value); } catch {}
+});
+
+// 代理开关
+document.getElementById('proxyToggle').addEventListener('change', (e) => {
+  state.useProxy = e.target.checked;
+  try { localStorage.setItem('ds_use_proxy', e.target.checked ? '1' : '0'); } catch {}
+});
+
+// 恢复已保存的 Key、Model 和代理设置
+(function() {
+  try {
+    const savedKey = localStorage.getItem('ds_api_key');
+    const savedModel = localStorage.getItem('ds_model');
+    const savedProxy = localStorage.getItem('ds_use_proxy');
+    if (savedKey) {
+      state.aiApiKey = savedKey;
+      document.getElementById('apiKeyInput').value = savedKey;
+    }
+    if (savedModel) {
+      state.aiModel = savedModel;
+      document.getElementById('modelSelect').value = savedModel;
+    }
+    if (savedProxy !== null) {
+      state.useProxy = savedProxy !== '0';
+      document.getElementById('proxyToggle').checked = state.useProxy;
+    }
+  } catch {}
+})();
+
+// ----- 生成数量选择 -----
+document.getElementById('batchRow').addEventListener('click', (e) => {
+  const btn = e.target.closest('.batch-btn');
+  if (!btn) return;
+  document.querySelectorAll('.batch-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.batchCount = parseInt(btn.dataset.batch);
+});
+
+// ----- 工具栏更新 -----
+function updateToolbar() {
+  const typeNames = {
+    news: '新闻突发型', crisis: '危机预警型', reverse: '反认知型',
+    story: '故事沉浸型', dialogue: '对话剧情型', record: '战绩背书型'
+  };
+
+  document.getElementById('toolbarTitle').textContent = typeNames[state.scriptType] || state.scriptType;
+}
+
+// ----- 显示生成结果（批量模式）-----
+function displayBatchResults(scripts) {
+  const empty = document.getElementById('scriptEmpty');
+  const loading = document.getElementById('scriptLoading');
+  const results = document.getElementById('scriptResults');
+  const btnCopy = document.getElementById('btnCopy');
+  const btnRegen = document.getElementById('btnRegenerate');
+
+  loading.style.display = 'none';
+  empty.style.display = 'none';
+  btnCopy.disabled = false;
+  btnRegen.disabled = false;
+  btnCopy.classList.remove('copied');
+
+  const isSingle = scripts.length === 1;
+
+  let html = '<div class="script-grid' + (isSingle ? ' single' : '') + '">';
+  scripts.forEach((script, idx) => {
+    const s = script.structure;
+    const numberTag = scripts.length > 1 ? '<div class="card-number">#' + (idx + 1) + '</div>' : '';
+    const warnTag = !script.clean
+      ? '<div style="font-size:11px;color:var(--danger);margin-top:6px;">⚠ 含禁词「' + escapeHtml(script.dirtyWord || '') + '」已用尽重试次数</div>'
+      : '';
+
+    let scriptBody = '';
+    // 如果有分段标签，按标签展示；否则直接展示全文（新版叙述模板的单段模式）
+    const displayOrder = Object.keys(s).filter(k => k !== 'full' && k !== 'sentenceCount' && s[k]);
+    if (displayOrder.length > 0) {
+      const segStyles = ['seg-hook', 'seg-negate', 'seg-hint', 'seg-cta'];
+      displayOrder.forEach((key, si) => {
+        const label = TYPE_LABELS[key] || key;
+        const style = segStyles[si % segStyles.length];
+        scriptBody += '<span class="segment-label ' + style + '">' + label + '</span>' + escapeHtml(s[key]) + '。<br><br>';
+      });
+    } else {
+      // 新版叙述模板：直接展示全文，保留自然换行
+      const fullText = script.full || '';
+      scriptBody = escapeHtml(fullText).replace(/\n/g, '<br>') + '<br><br>';
+      // 尝试用句号分段加颜色标记
+      const sentences = fullText.split(/[。！？]/).filter(Boolean);
+      if (sentences.length >= 3) {
+        const colors = ['#0071e3','#ff9500','#34c759','#af52de','#ff3b30','#0071e3'];
+        let colored = '';
+        sentences.forEach((seg, si) => {
+          const color = colors[Math.floor(si / Math.max(1, Math.ceil(sentences.length / colors.length))) % colors.length];
+          colored += '<span style="color:' + color + ';font-weight:500;">' + escapeHtml(seg.trim()) + '。</span>';
+        });
+        scriptBody = colored + '<br><br>';
+      }
+    }
+
+    html += '\n      <div class="script-card">\n        ' + numberTag + '\n        <div class="script-text">' + scriptBody + '</div>\n        ' + warnTag + '\n        <div class="script-meta" style="display:flex;"><span class="meta-tag">📝 ' + script.charCount + '字</span> <span class="meta-tag">📏 ' + (script.structure.sentenceCount || '?') + '句</span></div>\n        <div class="card-actions">\n          <button class="card-btn" onclick="copySingleScript(event, ' + idx + ')">📋 复制</button>\n          <button class="card-btn" onclick="regenerateSingle(event, ' + idx + ')">🔄 换一版</button>\n        </div>\n      </div>';
+  });
+  html += '\n</div>';
+
+  results.innerHTML = html;
+  results.style.display = 'block';
+  state.currentScript = scripts[0];
+}
+
+// ----- 显示加载状态 -----
+function showLoading(current, total) {
+  const empty = document.getElementById('scriptEmpty');
+  const loading = document.getElementById('scriptLoading');
+  const results = document.getElementById('scriptResults');
+  const pct = Math.round(current / total * 100);
+
+  empty.style.display = 'none';
+  results.style.display = 'none';
+  loading.style.display = 'block';
+  loading.innerHTML =
+    '<div class="loading-spinner"></div>' +
+    '<div class="loading-text">正在生成第 ' + current + '/' + total + ' 条引流稿...</div>' +
+    '<div class="loading-sub">分析素材库 · 组合叙述模板 · 过滤禁词</div>' +
+    '<div class="loading-progress"><div class="loading-progress-bar" style="width:' + pct + '%"></div></div>';
+}
+
+// 更新加载状态的文字（用于 AI 模式）
+function updateLoadingText(subText) {
+  const sub = document.querySelector('.loading-sub');
+  if (sub) sub.textContent = subText;
+}
+
+// ----- 显示单条（兼容旧代码/知识库预览）-----
+function displayScript(script) {
+  displayBatchResults([Object.assign({}, script, { clean: true })]);
+}
+
+// ----- 复制单条 -----
+async function copySingleScript(event, idx) {
+  event.stopPropagation();
+  if (!state.currentScripts[idx]) return;
+  const text = state.currentScripts[idx].full;
+  const btn = event.target;
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.classList.add('copied');
+    btn.textContent = '✅ 已复制';
+    showToast('📋 已复制到剪贴板');
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.textContent = '📋 复制';
+    }, 2000);
+  } catch {
+    showToast('复制失败，请手动选择文本');
+  }
+}
+
+// ----- 换单条 -----
+function regenerateSingle(event, idx) {
+  event.stopPropagation();
+  if (!state.currentScripts[idx]) return;
+  const result = generateScript(state.currentScripts[idx].type);
+  const newScript = Object.assign({}, result.script, { censoredRetries: result.retries, clean: result.clean, dirtyWord: result.dirtyWord });
+  state.currentScripts[idx] = newScript;
+  addToHistory(result.script);
+  displayBatchResults(state.currentScripts);
+  updateStats();
+  showToast('🔄 已更换 #' + (idx + 1));
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ----- 生成按钮 -----
+document.getElementById('btnGenerate').addEventListener('click', async () => {
+  const btn = document.getElementById('btnGenerate');
+  const count = state.batchCount;
+  const isAI = state.aiMode === 'deepseek';
+
+  btn.textContent = '⏳ 生成' + (count > 1 ? ' ' + count + '条' : '') + '中...';
+  btn.classList.add('generating');
+  btn.disabled = true;
+
+  // 显示初始加载状态
+  showLoading(0, count);
+  document.getElementById('scriptArea').scrollTop = 0;
+
+  // 用 setTimeout(0) 让 UI 先渲染加载界面，再开始生成
+  setTimeout(async () => {
+    try {
+      const results = [];
+      let censored = 0;
+
+      if (isAI) {
+        // ====== AI 模式 ======
+        for (let i = 0; i < count; i++) {
+          if (count > 1) showLoading(i + 1, count);
+          updateLoadingText('正在请求 DeepSeek 生成第 ' + (i + 1) + ' 条...');
+          const script = await generateWithDeepSeek(state.scriptType);
+          results.push(script);
+          addToHistory(script);
+        }
+      } else {
+        // ====== 模板模式 ======
+        for (let i = 0; i < count; i++) {
+          if (count > 1) showLoading(i + 1, count);
+          const result = generateScript(state.scriptType);
+          if (!result.clean) censored++;
+          results.push({ ...result.script, censoredRetries: result.retries, clean: result.clean, dirtyWord: result.dirtyWord });
+          addToHistory(result.script);
+        }
+      }
+
+      state.currentScripts = results;
+      displayBatchResults(results);
+
+      const msg = isAI
+        ? '✅ AI 生成完成'
+        : (count > 1
+          ? '✅ 已生成 ' + count + ' 条' + (censored > 0 ? '（' + censored + ' 条经禁词过滤）' : '')
+          : '✅ 生成完成' + (censored > 0 ? '（经禁词过滤）' : ''));
+      showToast(msg);
+    } catch (err) {
+      console.error('生成失败:', err);
+      document.getElementById('scriptLoading').style.display = 'none';
+      document.getElementById('scriptEmpty').style.display = '';
+      document.getElementById('scriptEmpty').innerHTML =
+        '<div class="icon">⚠️</div>' +
+        '<p>生成过程中出现错误</p>' +
+        '<p style="font-size:12px;margin-top:8px;color:var(--danger);">' + escapeHtml(err.message) + '</p>' +
+        '<p style="font-size:12px;margin-top:12px;color:var(--text-tertiary);">请检查知识库是否正常加载，或切换到模板模式</p>';
+      showToast('❌ 生成失败: ' + err.message);
+    } finally {
+      btn.textContent = isAI ? '🧠 AI 生成引流稿' : '✨ 生成引流稿';
+      btn.classList.remove('generating');
+      btn.disabled = false;
+      updateStats();
+    }
+  }, 0);
+});
+
+// ----- 复制（全部）-----
+document.getElementById('btnCopy').addEventListener('click', async () => {
+  if (!state.currentScripts.length) return;
+
+  const allText = state.currentScripts.map((s, i) =>
+    state.currentScripts.length > 1 ? '--- 第' + (i + 1) + '条 ---\n' + s.full : s.full
+  ).join('\n\n');
+
+  try {
+    await navigator.clipboard.writeText(allText);
+    const btn = document.getElementById('btnCopy');
+    btn.classList.add('copied');
+    btn.innerHTML = '✅ 已复制';
+    showToast('📋 已复制' + state.currentScripts.length + '条到剪贴板');
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = '📋 复制';
+    }, 2000);
+  } catch {
+    showToast('复制失败，请手动选择文本');
+  }
+});
+
+// ----- 换一版（全部重新生成）-----
+document.getElementById('btnRegenerate').addEventListener('click', () => {
+  const btn = document.getElementById('btnRegenerate');
+  const count = state.batchCount;
+  btn.textContent = '⏳ ...';
+  btn.disabled = true;
+
+  showLoading(0, count);
+
+  setTimeout(() => {
+    try {
+      const results = [];
+      let censored = 0;
+
+      for (let i = 0; i < count; i++) {
+        if (count > 1) showLoading(i + 1, count);
+        const result = generateScript(state.scriptType);
+        if (!result.clean) censored++;
+        results.push({ ...result.script, censoredRetries: result.retries, clean: result.clean, dirtyWord: result.dirtyWord });
+        addToHistory(result.script);
+      }
+
+      state.currentScripts = results;
+      displayBatchResults(results);
+      showToast('🔄 已生成 ' + count + ' 条' + (censored > 0 ? '（' + censored + '条经禁词过滤）' : ''));
+    } catch (err) {
+      console.error('重新生成失败:', err);
+      document.getElementById('scriptLoading').style.display = 'none';
+      showToast('❌ 重新生成失败: ' + err.message);
+    } finally {
+      btn.textContent = '🔄 换一版';
+      btn.disabled = false;
+      updateStats();
+    }
+  }, 0);
+});
+
+// ============================================================
+// 知识库管理
+// ============================================================
+
+// ----- 投喂模态框 -----
+document.getElementById('btnFeed').addEventListener('click', () => {
+  document.getElementById('feedModal').classList.add('open');
+  document.getElementById('feedText').value = '';
+  document.getElementById('feedText').focus();
+});
+
+document.getElementById('btnFeedCancel').addEventListener('click', () => {
+  document.getElementById('feedModal').classList.remove('open');
+});
+
+// 点击蒙层关闭
+document.getElementById('feedModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('feedModal')) {
+    document.getElementById('feedModal').classList.remove('open');
+  }
+});
+
+// ----- 将文本拆分为独立的视频稿（按空行/连续换行分隔）-----
+function splitScripts(rawText) {
+  // 先按连续换行（空行）拆分
+  let blocks = rawText.split(/\n\s*\n/).map(b => b.trim()).filter(b => b.length > 0);
+
+  // 如果只拆出1段，尝试按单换行拆分（兼容紧凑格式）
+  if (blocks.length === 1) {
+    const lines = rawText.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
+    // 如果每行都足够长（可能是完整的脚本），按行拆分
+    const longLines = lines.filter(l => l.length >= 20);
+    if (longLines.length >= 2 && longLines.length === lines.length) {
+      blocks = longLines;
+    }
+  }
+
+  // 过滤太短的片段
+  return blocks.filter(b => b.replace(/\s/g, '').length >= 15);
+}
+
+// ----- 输入时实时预览拆分结果 -----
+document.getElementById('feedText').addEventListener('input', () => {
+  const text = document.getElementById('feedText').value;
+  const preview = document.getElementById('feedPreview');
+  const scripts = splitScripts(text);
+
+  if (scripts.length === 0) {
+    preview.style.display = 'none';
+    return;
+  }
+
+  const typeSelect = document.getElementById('feedType').value;
+  const isAuto = typeSelect === 'auto';
+
+  let html = `<strong>📊 识别到 <span style="color:var(--accent);">${scripts.length}</span> 条视频稿</strong>`;
+  if (scripts.length === 1) {
+    html += ` · 共 ${scripts[0].replace(/\s/g,'').length} 字`;
+  } else {
+    const totalChars = scripts.reduce((sum, s) => sum + s.replace(/\s/g, '').length, 0);
+    html += ` · 共 ${totalChars} 字`;
+  }
+  html += '<div style="margin-top:6px;">';
+
+  scripts.slice(0, 5).forEach((s, i) => {
+    const preview = s.slice(0, 50);
+    const detectedType = isAuto ? autoDetectType(s) : typeSelect;
+    const typeEmoji = {news:'📰',crisis:'⚠️',reverse:'🔄',story:'📖',dialogue:'💬',record:'🏆'};
+    html += `<div style="margin-bottom:3px;"><span style="color:var(--accent);font-weight:600;">#${i+1}</span> ${typeEmoji[detectedType]||'📝'} ${escapeHtml(preview)}...</div>`;
+  });
+
+  if (scripts.length > 5) {
+    html += `<div style="color:var(--text-tertiary);">...还有 ${scripts.length - 5} 条</div>`;
+  }
+  html += '</div>';
+
+  preview.innerHTML = html;
+  preview.style.display = 'block';
+});
+
+// ----- 投喂确认（批量学习）-----
+document.getElementById('btnFeedConfirm').addEventListener('click', () => {
+  const text = document.getElementById('feedText').value.trim();
+  const typeSelect = document.getElementById('feedType').value;
+
+  if (!text) {
+    showToast('⚠️ 请粘贴短视频稿文案');
+    return;
+  }
+
+  // 拆分为多条脚本
+  const scripts = splitScripts(text);
+  if (scripts.length === 0) {
+    showToast('⚠️ 未识别到有效的视频稿（每条至少15字）');
+    return;
+  }
+
+  let learnedCount = 0;
+  const typeStats = {};
+  const batchId = Date.now().toString(36);
+
+  scripts.forEach((scriptText, index) => {
+    if (scriptText.replace(/\s/g, '').length < 15) return;
+
+    // 类型识别
+    let detectedType = typeSelect;
+    if (typeSelect === 'auto') {
+      detectedType = autoDetectType(scriptText);
+    }
+
+    // 提取短语
+    const extracted = extractPhrasesFromScript(scriptText);
+
+    // 添加到知识库
+    state.knowledgeBase.push({
+      id: batchId + '-' + index,
+      type: detectedType,
+      text: scriptText,
+      extracted: extracted,
+      timestamp: new Date().toISOString(),
+      batchId: batchId
+    });
+
+    typeStats[detectedType] = (typeStats[detectedType] || 0) + 1;
+    learnedCount++;
+  });
+
+  // 保存
+  saveData();
+
+  // 关闭模态框
+  document.getElementById('feedModal').classList.remove('open');
+  document.getElementById('feedText').value = '';
+  document.getElementById('feedPreview').style.display = 'none';
+  updateStats();
+  renderKnowledgeBase();
+
+  // 构造结果消息
+  const typeNames = {news:'新闻突发',crisis:'危机预警',reverse:'反认知',story:'故事沉浸',dialogue:'对话剧情',record:'战绩背书'};
+  const summary = Object.entries(typeStats)
+    .map(([t, c]) => `${typeNames[t]||t}×${c}`)
+    .join('、');
+
+  showToast(`✅ 批量学习完成：${learnedCount} 条（${summary}）`);
+});
+
+// ----- 自动识别脚本类型 -----
+function autoDetectType(text) {
+  const patterns = {
+    news: ['刚刚', '突发', '紧急', '临时加播', '一分钟前', '弹窗', '深夜', '凌晨', '突发'],
+    crisis: ['调仓', '管住手', '注意了', '危险', '别乱操作', '赶紧跑', '来不及了', '泥沙俱下'],
+    reverse: ['忘掉', '删除', '放下', '别再死磕', '不要看了', '彻底大变天', '别再看'],
+    story: ['停车场', '回公司', '电脑关了', '下班', '吃饭', '掉头回去', '本来没准备', '复盘了一遍'],
+    dialogue: ['A：', 'B：', '你跑了没', '跑了没有', '那你觉得'],
+    record: ['谁先讲的', '一战成名', '名声鹊起', '老粉都懂', '没人怀疑', '马后炮', '哪次没带大家']
+  };
+
+  let bestType = 'news';
+  let bestScore = 0;
+
+  Object.entries(patterns).forEach(([type, keywords]) => {
+    let score = 0;
+    keywords.forEach(kw => {
+      const re = new RegExp(kw, 'g');
+      const matches = text.match(re);
+      if (matches) score += matches.length;
+    });
+    if (score > bestScore) {
+      bestScore = score;
+      bestType = type;
+    }
+  });
+
+  return bestType;
+}
+
+// ----- 知识库面板 -----
+document.getElementById('btnKb').addEventListener('click', () => {
+  document.getElementById('kbPanel').classList.add('open');
+  renderKnowledgeBase();
+});
+
+document.getElementById('btnKbClose').addEventListener('click', () => {
+  document.getElementById('kbPanel').classList.remove('open');
+});
+
+function renderKnowledgeBase() {
+  const kbList = document.getElementById('kbList');
+  if (state.knowledgeBase.length === 0) {
+    kbList.innerHTML = '<div class="kb-empty">还没有投喂过稿件<br>点击「投喂爆款稿」开始构建知识库</div>';
+    return;
+  }
+
+  const typeNames = {
+    news: '📰 新闻突发', crisis: '⚠️ 危机预警', reverse: '🔄 反认知',
+    switch: '🔄 赛道切换', era: '🔭 时代叙事', scarcity: '💎 限量筛选'
+  };
+
+  // 按批次分组显示
+  const batches = new Map();
+  state.knowledgeBase.forEach((item, index) => {
+    const batchKey = item.batchId || ('single-' + item.id);
+    if (!batches.has(batchKey)) batches.set(batchKey, []);
+    batches.get(batchKey).push({ item, index });
+  });
+
+  let html = '';
+  batches.forEach((group) => {
+    const isBatch = group.length > 1;
+    if (isBatch) {
+      const firstType = group[0].item.type;
+      const typeEmoji = typeNames[firstType] ? typeNames[firstType].split(' ')[0] : '📝';
+      html += `<div style="font-size:11px;font-weight:600;color:var(--text-tertiary);padding:8px 4px 4px;letter-spacing:0.5px;">
+        ${typeEmoji} 批次导入 · ${group.length} 条
+        <button onclick="deleteBatchItems('${group[0].item.batchId}')" style="margin-left:8px;font-size:10px;border:none;background:none;color:var(--danger);cursor:pointer;opacity:0.7;">删除批次</button>
+      </div>`;
+    }
+    group.forEach(({ item, index }) => {
+      html += `
+        <div class="kb-item" onclick="previewKbItem('${item.id}')">
+          <div class="kb-type">${typeNames[item.type] || item.type}</div>
+          <div class="kb-text">${escapeHtml(item.text.slice(0, 120))}...</div>
+          <button class="kb-delete" onclick="event.stopPropagation(); deleteKbItem(${index})">✕</button>
+        </div>`;
+    });
+  });
+
+  kbList.innerHTML = html;
+}
+
+function previewKbItem(id) {
+  const item = state.knowledgeBase.find(i => i.id === id);
+  if (!item) return;
+  const script = {
+    full: item.text,
+    structure: analyzeScriptStructure(item.text) || { hook: '', negate: '', hint: '', cta: '', full: item.text, sentenceCount: item.text.split(/[。！？]/).filter(s => s.trim().length > 0).length },
+    type: item.type,
+    length: 'medium',
+    charCount: item.text.replace(/\s/g, '').length,
+    timestamp: item.timestamp,
+    id: item.id
+  };
+  displayScript(script);
+  document.getElementById('kbPanel').classList.remove('open');
+  showToast('📖 已加载知识库稿件');
+}
+
+function deleteKbItem(index) {
+  state.knowledgeBase.splice(index, 1);
+  saveData();
+  renderKnowledgeBase();
+  updateStats();
+  showToast('🗑 已删除');
+}
+
+function deleteBatchItems(batchId) {
+  if (!batchId || !confirm('确定删除整批导入的稿件吗？此操作不可恢复。')) return;
+  state.knowledgeBase = state.knowledgeBase.filter(item => item.batchId !== batchId);
+  saveData();
+  renderKnowledgeBase();
+  updateStats();
+  showToast('🗑 已删除整批稿件');
+}
+
+// ============================================================
+// 预置种子与清空
+// ============================================================
+
+// ----- 默认种子数据（从原稿提取的全部107条脚本，含自动类型识别）-----
+const DEFAULT_SEEDS = [
+  { type: "news", text: "有子弹的朋友们，我们的春天啊，真的来了，我很少这么激动过，因为今天晚上20:10出的这个消息，东财弹窗弹出来的时候，我可能整个人都不太敢相信，而且我敢说，大部分的股民应该还都不知道我们团队现在疯狂的在催我上直播，我不多说了，我现在就去直播间里面，不知道的直接进直播间" },
+  { type: "news", text: "炒股这10年啊，我就发现有的散户啊，它真是有钱，几万十几万往股市里砸，付款的时候眼睛连眨都不眨一下。这么重要的事，宁愿草率重仓瞎操作，也不愿意花几天时间找对方向、找对节奏。股市赚钱从来不是靠运气，是靠抓主线！如果你现在还不知道本月核心主线在哪。直接点头像来我直播间" },
+  { type: "news", text: "要是你炒股能赚个一二十万的，你直接划走吧，因为你也不怎么缺钱花，那如果你的持仓超过10万，那你听我的，专做短线，快进快出，你跟身边人就不在一个赛道上了，而且重点是，我现在正在直播，你先来听5分钟，别等到我下播了再后悔，现在就点我头像来我直播间吧" },
+  { type: "news", text: "十几万块钱拿来炒股，是否能告别打工？别死扛着硬做长线了，你就全身心投入短线，快进快出，你个月后你可能和身边人拉开差距，别的方向你不用看，你想知道的，直接来我直播间，先听5分钟，我直接就把主线节奏发送到你的手机上，你现在就点我头像，来听听吧" },
+  { type: "news", text: "如果你接下来三年不打算离开股市，立志把炒股当成第二职业，那你听我一句忠告，要避免侥幸心理，选对赛道远比频繁交易更加重要。旧热点已经退潮了，新一轮主线机会已经出现。想知道的，就点头像来直播间。正在直播，抓紧进来。" },
+  { type: "news", text: "紧盯这个方向，因为接下来可能就不是什么芯片半导体了，这尾盘的动静一出来，我也是激动的根本就不想吃饭，我先紧急给大家加播一场，因为目前的位置是很低的，就看你手上到底有没有，那还不知道的朋友，咱在直播间给大家讲解啊，抓紧时间进来" },
+  { type: "reverse", text: "明确地告诉大家，最近的科技股不要看了啊，我看科技看什么，我们已经跟大家讲了，不是什么机器人跟什么航天，大资金最近全都在出售它，好吧，咱们直播间今晚正在聊，抓紧来。" },
+  { type: "news", text: "明天A股开盘可能要迎来比较大的波动了，刚刚突发了这个消息，我马上回公司，给大家紧急加播一场，特别是手上持有这个方向的朋友，一定要小心，这次的调整可能会非常大夸张，还不知道什么情况的，点头像来我直播间，我正在分享" },
+  { type: "reverse", text: "我只说一遍啊，别再死磕过时的老赛道。现在资金陆续撤离电力、科技这些前期热点，全新主线已经悄悄筑底完成。散户最大问题就是高位敢冲，低位不敢进。你要是分辨不出板块强弱，看不清资金流向。抓紧点头像进直播间，我把本月赛道逻辑讲清楚，说完我就下播。" },
+  { type: "news", text: "AXX你跑了没跑了呀？B前两天看你直播高位跑了。A那就行了。接下来呢，把这个低位补涨的做好，反复的去做。千万别被洗下车。B那具体看谁呢？A现在来直播间免费告诉你。" },
+  { type: "news", text: "大资金已经不在高位股了，都在看这个低位方向，不碰CPO、不碰券商、不碰电力，这个低位方向我已经连续三天重点观察，现在可以放心的告诉大家，点头像来我直播间，我们一起来把握" },
+  { type: "reverse", text: "删除电力，删除CPO，删除有色金属，本月投资新方向已经锁定！那些老登赛道的行情早就熄火，别再硬扛了。这个新方向，低位震荡半个多月，资金悄悄进场。你要是手上有，千万别被短期波动洗下车。要是想摸清赛道逻辑、直接点头像进直播间，最后讲十分钟。" },
+  { type: "news", text: "比机器人、固态电池更猛的方向，它来了！别再盯着那些炒烂的赛道了，这个新主线，是消息、资金、业绩三重共振的超级风口！万亿级资金砸向这个领域，全球巨头抢着卡位，国内龙头订单已经排到明年。它不是概念，是实打实的业绩爆发期，低位横盘俩月，主力悄悄吸筹，主升浪一触即发！现在不去看，等涨起来再追，就晚了。想知道的，点头像进直播间，正在分享。" },
+  { type: "news", text: "现在还不调仓的股民，你怎么睡得着觉？新闻都看了么？一分钟前刚刚弹出来，信号已经落地，这个新赛道横盘许久，接下来热度可能会超预期，炒股的朋友们，你要是现在不知道该换什么，来我直播间，我一次性讲清楚，抓紧进来别错过。" },
+  { type: "record", text: "不要等这个方向起飞了再去看，你肯定拿不住的。这说的是不是你？行情低位的时候，你不敢布局，等拉升起来、全网都在吹，你反而敢追了，最后大概率就是接盘。真正能赚钱的主线，往往都是在底部震荡、没人看好的时候提前去占座。现在全新方向已经锁定，低位机会难得。想知道的，直接点头像进直播间，我正在讲重点！" },
+  { type: "record", text: "有人说我马后炮？你来我直播间看两天，你就知道我是不是马后炮直播间了，领到资料的可以一起见证。每一轮主线我都是提前给大家讲的，4月的电力、5月的PCB ，6月的AI ,全部提前拆解。从不追涨、从不跟风，只做低位核心方向。我的实力不靠嘴吹，跟着我的老粉一路见证。想跟着节奏踏准行情，点头像进来，先看10分钟" },
+  { type: "news", text: "今天开盘管住手了啊，凌晨5点的新闻都看到了没有？放下有色金属，放下商业航天，股市爆炸的消息，我今天提前一个小时给大家播，现在是晚上，炒股的朋友都给我看过来，我从来就没有这么早播过，今天这个一定要抓紧时间。我直播半个小时，直接点头像进直播间，我快速给大家讲清楚到底发生了什么。" },
+  { type: "record", text: "半导体谁先讲的，是我，商业航天谁先讲的，是我，电力谁先讲的，还是我。现在这些咱们都不看了，因为新的方向已经出现。废话不多说啊，你直接去见证就好了。今天直播只聊一会儿，记得来听。" },
+  { type: "record", text: "这直播讲股票的这帮家伙们啊，我都替他们害臊，真的是吹起牛来了，人家脸不红心不跳。我说你有本事，你让大家免费体验先免费体验，对不对？让我看看你真正的实力啊。所以我的直播间，向来都是免费分享的，我敢说啊，很少有人的直播像我这么直接的，所以呢，你现在点头像，来直播间免费领。" },
+  { type: "news", text: "今天开盘注意了，新闻看到没有？老美那边又传来今天的大消息，我饭还没来得及吃，赶紧给你们加播一场，记得忘掉半导体，也忘掉电力。更别看机器人了，别被那些老黄历迷了眼，哪怕有连板的潜力也忘掉。就在刚刚出的大消息，我马上开播给大家讲，盯着一个方向就行，目前位置还很低，不浪费时间，我直接给你们上干货，赶紧来我直播间。" },
+  { type: "news", text: "今天市场的新信号，我必须提醒大家，大概率要影响接下来几天的市场行情，更有可能对你看好的方向产生不可挽回的影响。马上开播，刷到的朋友可不能大意，进直播间，我现在正在讲。" },
+  { type: "news", text: "放下有色金属，放下商业航天，股市爆炸的消息，我今天提前一个小时给大家播，现在是早上，炒股的朋友都给我看过来，我从来就没有这么早播过，今天这个一定要抓紧时间。我直播半个小时，直接点头像进直播间，我快速给大家讲清楚到底发生了什么" },
+  { type: "record", text: "一个月前的电力让我们直播间一举成名，半个月前的医药又让我名声鹊起，现在我一开播，那基本都上千人的围观。前面呢，我们就不看了，我今天开播说一个全新的方向，能不能再次创记录？直播间正在分享，你亲自进来见证一下。" },
+  { type: "news", text: "朋友们，今天我觉得 a 股有很多的朋友应该会彻夜无眠了。刚刚我们也是开车回到了上海，那这次开完这个会，包括出现的这个消息了以后，我觉得明天应该会真的影响到大家，应该心里都有点数了吧？当然不知道什么消息的没关系啊，抓紧到咱们的直播间，我可能接下来会临时给大家播个10分钟，把这个事跟大家讲清楚。不知道什么事的啊，抓紧到直播间啊！" },
+  { type: "news", text: "调仓,赶紧调仓,兄弟们一分钟前弹出来的消息,今晚的新某波也说了这个事儿,4万亿的投资来了,不要再看老掉牙的航天和机器人了,你紧盯这一个方向就行了,一个月没有播了,我今天直接复播,看能不能直接签人在线,如果你恰好在里面,我跟你讲,拿住了,它现在的位置低,而且差不多是连续半个月都震荡不破,还不知道是什么呢,马上进我的直播间,这次是直接免费分享给大家,就讲10分钟。" },
+  { type: "news", text: "明天开盘,散户可能人都要傻了。朋友们,刚刚深夜发的新闻看到了吗?我现在刚出来又得去直播,市场出了一个更大的大消息,而且这次是一个大反转。不是军军,也不是半导体,更不是机器人,是一个重大的利好消息。我们整个团队看到这个消息的时候,所有人都围在我的身边讨论这个消息。你们知道A股等这个大消息等了多少年吗?包括这次给到这个赛道位置这么低,来了这么大的利好。朋友们,这一波行情可能真的会来一个, 比较猛的综合各大券商的研报,一是指向了同一个方向,还不清楚这个方向的,赶紧来我直播间,我正在分享,给你看点真东西。" },
+  { type: "news", text: "放下有色金属,放下商业航天,放下电力。凌晨五点,老美传来的新闻都看了没有?我今天提前一个小时给大家播,刚出的大消息,一分钟前刚盘出来的。大家伙,你现在就紧盯着一个方向。我呢,一个月没播了,今天直接复播,看能不能继续1000人在线。如果你恰好在里面,你听好了,拿住了。他现在位置这么低，,差不多呢,是连续半个月震荡不破。很明显,接下来就是博弈他的主声浪。 还不知道是什么呢,马上点头像进来。这场直播就直接公开分享给大家,就讲十分钟。" },
+  { type: "news", text: "赶紧调仓，因为接下来科技赛道真的要变脸了！朋友们，我现在正在会议现场，就在刚刚，现场得知整个市场传来科技相关的非常重要的消息，吓得我立刻准备给大家加播一场，如果你还不知道发生什么的，进我直播间，我来给你分享，抓紧时间过来！" },
+  { type: "news", text: "忘掉光伏、忘掉芯片半导体、忘掉机器人这些老热点！我现在正在会议现场，刚出的科技相关大消息，一分钟前刚在现场弹出，我跟大家讲,你现在就紧盯着一个核心科技方向，连续半个月位置不破，很明显,接下来就是博弈他的主升浪，还不知道是什么,马上来，这次直接免费分享给大家！" },
+  { type: "story", text: "来,这下没人怀疑我了吧,之前布局的科技细分赛道，咱们一战成名，我现在正在会议现场，现在我回来了,今天在现场正式开播给各位讲一个全新的科技方向，也是下个月的核心主线，那么今年科技行情怎么样，就看这个方向,想知道的，现在抓紧时间来,来看10分钟,没有回放，现在正在讲重点！" },
+  { type: "news", text: "忘掉光伏，忘掉半导体，忘掉电力。刚出的大消息，一分钟前刚出来，我跟大家讲，你现在就盯紧这个方向，有段时间没播了，我今天是直接复播。看能不能继续千人在线，如果你恰好在里面，跟你讲，拿住了，而且差不多是连续半个月横盘不破，很明显接下来就是博弈它的主升浪。还不知道是什么，马上进我直播间，这一次直接是免费分享给大家，就讲一会，赶紧来。" },
+  { type: "news", text: "兄弟们，我刚把车开出停车场，团队一个电话又把我叫回公司了。我一开始还以为是什么小事，结果把今天收盘后的几条公开信息放在一起看，我们几个老师越讨论越觉得，这次市场可能真的和前几天不一样。我知道很多朋友现在手里还有仓位，也不知道该继续拿着还是重新看看方向，所以我决定今天临时加播一场。我不敢跟你说接下来一定会怎么样，但有几个变化，我觉得每一个还在市场里的朋友都应该知道。要是你现在还不知道发生了什么，别急着划走，点头像来直播间，我把今天看到的内容和我的思路完整讲给大家听，就讲十分钟，讲完今天就下播。" },
+  { type: "news", text: "朋友们，今天晚上我是真的准备休息了，电脑都已经关了。结果连续收到好多朋友发来的消息，都在问同一个问题：“这个信号到底怎么看？” 我索性又把电脑重新打开，把今天市场从头到尾重新复了一遍。越看越觉得，有些变化很多人根本没注意到。真正值得关注的，不一定是今天涨了还是跌了，而是市场关注的方向正在悄悄发生变化。我刚刚已经通知团队准备直播了，不管你现在手里有没有仓位，我都建议你先进来听十分钟。我把今天整理出来的几个重点全部分享给大家，听完以后，你再决定接下来怎么观察市场也不迟。" },
+  { type: "news", text: "兄弟们，我刚准备下班，电脑都已经关了，结果团队突然把我叫了回来。我们把今天收盘后的公开信息重新梳理了一遍，越看越觉得，这次市场的变化没有表面看起来那么简单。我知道很多朋友现在心里都在纠结，到底是继续拿着，还是再观察一下。我不想在短视频里说太多，因为很多内容几句话根本讲不清楚。我已经临时加播了，想知道我今天到底看到了什么，点头像来直播间，我把我的思路完整分享给大家，就讲十分钟。" },
+  { type: "news", text: "朋友们，今天这个时间还没睡的，我建议你认真听我一分钟。我本来已经准备休息了，后台却一直收到大家发来的消息，都在问同一个问题。我索性又把今天市场从头到尾重新看了一遍，发现一个很多人都忽略的细节。真正值得关注的，不一定是今天涨了多少、跌了多少，而是市场关注点正在慢慢发生变化。我已经开播了，不知道最近市场节奏的，直接来直播间，我把今天整理出来的重点全部讲给大家。" },
+  { type: "news", text: "我刚刚还在吃饭，手机突然连续响了好几次，团队直接让我赶回公司。我一开始还以为是什么普通消息，结果大家坐下来一分析，发现今天盘后确实有几个公开信息值得重点关注。我知道很多朋友现在手里还有仓位，也不知道接下来应该怎么看，所以我决定临时加播一场。短视频里说不明白，直播间我把最近市场几个变化全部梳理给大家，听完以后，你再决定接下来怎么观察。" },
+  { type: "news", text: "兄弟们，今天千万别急着划走。我刚刚把今天市场重新复盘了一遍，越看越觉得，很多人可能把重点放错地方了。大家都在讨论今天的涨跌，可真正值得关注的是市场背后的一些变化。我不敢说接下来一定会怎么样，但我觉得每一个还在市场里的朋友，都有必要了解一下。我已经通知团队开播了，点头像来直播间，我把我的判断和逻辑完整分享给大家。" },
+  { type: "news", text: "今天晚上，我是真的有点坐不住了。收盘以后，我们几个老师一直在讨论今天市场的一些变化，本来以为只是普通波动，结果越分析越觉得，有几个信号值得大家重点关注。我知道很多朋友最近都比较迷茫，不知道应该重点看什么，所以我决定临时开播，把最近观察到的内容全部整理出来。想知道我为什么这么重视今天，直接来直播间，我们一起聊。" },
+  { type: "news", text: "朋友们，如果你最近每天都在盯着行情，那今天这场直播，我建议你一定来听听。我刚刚把最近几天市场公开信息全部重新整理了一遍，发现很多人一直关注的地方，其实并不是现在最值得研究的。我不想在这里讲得太细，因为容易越说越乱。我已经在直播间了，把最近市场几个重要变化完整梳理了一遍，进来听十分钟，也许会有新的思路。" },
+  { type: "news", text: "兄弟们，我今天本来没准备加播，因为觉得很多内容明天再讲也来得及。结果刚刚团队把几份公开资料放到一起分析以后，我马上改变主意了。有些变化现在知道，和明天再知道，感受可能完全不一样。我知道很多朋友现在心里都有疑问，所以今天晚上我决定提前开讲。想知道我为什么突然改变安排，点头像来直播间，我把今天的观察全部告诉大家。" },
+  { type: "record", text: "今天有位老粉给我发了一句话，他说最近越看行情越不知道该怎么看了。我相信很多朋友都有同样的感觉，所以今天收盘以后，我把最近市场重新梳理了一遍，也重新整理了自己的思路。有几个变化，我觉得值得所有还在市场里的朋友重点关注。短视频时间有限，我已经开播了，想听完整分析的，直接来直播间，我慢慢给大家讲。" },
+  { type: "news", text: "朋友们，我刚从公司出来，又掉头回去了。因为刚刚团队提醒我，今天盘后有几个公开信息值得重新看看。我重新坐下来复盘以后，发现最近市场节奏和前段时间已经有一些不同了。我不想在这里给大家下什么结论，我只是想把自己看到的内容分享给大家。现在直播间已经开始讲了，想知道最近市场到底有哪些变化，抓紧进来。" },
+  { type: "news", text: "今天很多朋友可能觉得行情已经结束了，但在我看来，真正值得复盘的内容，现在才刚刚开始。我刚刚重新把今天市场从头到尾看了一遍，有几个地方让我反复确认了好几次。我觉得这些变化，可能比很多朋友想象得更值得关注。所以今晚我临时加播，把最近几天市场的观察全部整理出来。如果你最近也有点看不懂市场，不妨来直播间，我们一起聊聊。" },
+  { type: "news", text: "五月份的时候，别人在讲有色，我在讲电力。那六月份的时候，别人在讲电力，我在讲半导体。那到了七月份，别人开始在讲半导体了，我再看一个全新的方向。想知道这个方向，抓紧时间点我头像。" },
+  { type: "story", text: "你可能不知道，但玩股票的大概率知道我的名字，我刚落地上海，今天正式入数直播，每天一个方向只做核心超短，欢迎大家来我这边，大家一起见证。" },
+  { type: "reverse", text: "电力跑了没有？跑了跑了，你提示完风险，我立即跑了。那就好，现在散户全在无脑追高电力，那接下来整个电力板块可能就非常麻烦了。这么严重，那咱不看电力的话有什么新方向啊？你最近是不是没有看我直播呀？锁定我直播间，我快锁地告诉你。" },
+  { type: "record", text: "现在没人嘲笑我了吧？三月份分享电力的时候，很多人说我神棍；四月分享半导体的时候，你们说我托。今天我在直播间再给大家分享一个新的机会，这回你们不要再错过了！来直播间一起见证！" },
+  { type: "news", text: "现在这个行情，谁看了不激动啊？指数大涨，科技领涨，资金疯狂涌入。在开盘前，我紧急给大家加播一场，好吧？只讲十分钟，把一些领涨的方向给你讲清楚。如果说还不知道发生什么的朋友们，赶紧进直播间好好听一听啊！" },
+  { type: "story", text: "刚从北京开完会！这次会议消息真的太关键，影响力度很少见。手里拿着相关的朋友千万注意了，赶紧点我头像进直播间，咱们细说重点！" },
+  { type: "news", text: "明天开盘走势绝对会超出大家预想，早盘波动千万别乱操作！临时给大家加播十分钟，把今晚的这个消息给大家讲透，不清楚情况的抓紧来直播间！" },
+  { type: "news", text: "彻底大变天！别再死磕半导体、CPO、PCB 这些位置很高的了，外围消息已经说得明明白白，新主线就一条，来直播间咱们一起见证！" },
+  { type: "record", text: "这下总没人质疑我了吧！五月 PCB、六月半导体全都得到了大家的见证！今天正式开播，全新主线分享，老赛道位置都偏高，想抓新机会的赶紧进直播间！" },
+  { type: "record", text: "老粉都懂，之前电力、半导体哪次没带大家抓住机会？七月全新风口我梳理好了，别再盯着那些高位的旧赛道了，来直播间，十分钟直接讲清楚！" },
+  { type: "reverse", text: "科技走成现在这个样子，很多圈内的朋友都跟我说，当下行情太难做了！我说实话，PCB、CPO 还剩点局部小机会，大资金早就悄悄换方向了，换到哪里了？正在直播，别踏空！" },
+  { type: "news", text: "增仓增仓，赶紧增仓。比 25 年热度更高的主线方向它来了，晚上的 30 分钟新闻都看了没有？放下半导体，放下电力，我今天提前一个小时给它做直播，现在是半夜，炒股的朋友都看过来了。我从来都没有那么晚上开播过，今天这个一定要抓紧时间，我直播半个小时，直接点头像进我直播间，我快速给他讲清楚到底发生了什么。" },
+  { type: "news", text: "说你都那么有钱了，还开什么直播呢？直播间有很多粉丝也喜欢问这个问题。作为专业的投资顾问，我在这里直播不卖课也不收钱，我只做分享，每天只讲一个方向，行不行大家都很清楚，现在刚刚开播，欢迎各位朋友来见证。" },
+  { type: "news", text: "还好大 A 晚上都不开盘，要不然这不得炒疯了。躺在这方向的朋友们，好好拿稳了，三个部门联合发文，要不出意外，那这方向就是接下来的主线。手里恰好有的朋友们，拿住了，别被洗掉哈。不知道啥方向的朋友们，来直播间直接告诉你。" },
+  { type: "news", text: "手里有 PCB、cpo 的朋友一定要注意了，这刚发生了一件大事儿啊。就是刚刚传出来的，我现在趁知道的人非常少，我先紧急给大家加播一场，先花几分钟给大家讲清楚。如果说你目前一无所知的朋友，你赶紧来听我告诉你重点。" },
+  { type: "news", text: "行情是真的来了，十年的等待啊！放下 CPO，放下 PCB，放下消费、存储。这刚刚出的消息大家看到了吗？炒股的朋友一定要看过来，今天这个咱一定得抓紧时间进我直播间，我快速给大家讲清楚到底发生了什么。" },
+  { type: "record", text: "不会吧，你竟然还在这里面。短线资金现在已经撤离所谓的科技半导体了，现在就只有散户在里面玩了。手里还有子弹的朋友，咱就偷着乐吧。官媒发那么多字，就说这一件事，关键是它还没怎么涨过。不是 PCB, 也不是 cpo。为了防止你们说我吹牛，我已经把资料整理好了啊，就放在直播间。废话不多说，看看就知道。三分钟开播，你记得过来听啊，现场见证，见证完记得回来成为我的粉丝。" },
+  { type: "reverse", text: "明确的告诉大家，最近的什么 PCB、cpo 不要看了啊。不看这两个看什么？我们已经跟大家讲了，不是什么创新药跟什么存储，大资金最近全都在出手它。好吧，咱们直播间今晚正在聊，抓紧来！" },
+  { type: "crisis", text: "现在这个市场很现实啊，你方向对了，怎么做都舒服。但是有一点呢啊，方向你要是错了，指数涨不涨都跟你没关系了。想知道方向怎么看的，来直播间正在讲。" },
+  { type: "news", text: "明天散户啊可能会被震惊，盘后的消息都看到了吧。散户是不是都惊讶了，都开始为明天做准备了。别说你们了。今天啊我们提前一小时开播，忘掉贵金属忘掉算力，忘掉能源，只聊十分钟，我先跟你聊清楚。" },
+  { type: "crisis", text: "兄弟们又一个万亿赛道来了。我告诉大家，不是已经吵上天的算电协同了，更不是电力板块，具体是谁？咱们废话不多说，点头像来直播间。" },
+  { type: "record", text: "数据告诉我们，就三月往往会诞生年度的主线行情啊，就像去年的 AI 大模型，它是贯穿整个一整年，那今年的机会在哪儿呢？我们团队也深度复盘了，上百份的研报，已经明确了整个这个主线方向。那我今天会免费分享在直播间啊，没有任何套路。今天谁来我都给啊，想知道的朋友们别错过了。" },
+  { type: "news", text: "朋友们，我现在整个人都在颤抖，团队所有人看到这个消息都要疯了，这真实的吗？我们已经等了多少年这个利好了，他终于等来了啊，我今天抓紧给大家紧急加播一场，赶紧来直播间。我今天只分享半小时的时间，抓紧时间拼手速。" },
+  { type: "news", text: "兄弟们啊，美股大跌，那明天 a 股的开盘必然会承受不少压力啊，很可能会低开。但如果是这样，那哪些板块能逆势走强啊，哪些要补跌的？进直播间，我正在聊各种应对策略。" },
+  { type: "news", text: "现在啊你就忘掉半导体，忘掉商业航天，忘掉创新药，整个二季度的行情。现在真的来了，你看看这个行情，这个资金走势啊，今天收盘以后刚出的消息，我跟大讲，它一旦启动，接下来你可能上车的机会都没有啊，详细逻辑我在直播间给大家来分享啊，你可以进来听一听，明天开盘你就可以去看。" },
+  { type: "news", text: "朋友们，我和大家讲，明天大盘很可能会给你先来波洗盘。我跟大家讲，如果说明天早盘给你往上高开了，你一定要管住手啊。因为我现在人已经到这个直播间啊，我等会儿把整个明天走势和大家聊清楚啊，咱们今天时间有限，我们聊个半个小时。如果说你还不知道发生什么的啊，马上开播，赶紧来直播间啊，你直接来看。" },
+  { type: "news", text: "如果说你现在还死守 AI 的啊，死守半导体的死守机器人的，你可能会错过接下来的行情了啊，机会在哪儿呢？我直播间正在聊啊，别错过了。" },
+  { type: "reverse", text: "朋友们，新的利好来了啊，我跟大家讲，不是稀土啊，你真的不要再看稀土了，而是一个相对低位的核心方向。我现在刚快到公司了，我尽量半小时给大家去讲清楚，不见不散。做股票不超过十万块的朋友看过来啊，小资金呢想要做大，重点，就是在主线里面反复滚动操作，还不知道主线是什么的呢？现在来直播间我正在聊。" },
+  { type: "news", text: "老美那边盘后呢刚刚传来一个大消息，我现在提前结束，北京的调研，紧赶慢赶回到公司，忘掉什么创新药，忘掉什么有色金属，什么油气开采，别再问什么老热点怎么走了，马上给到朋友们加播一场，还不知道发生什么的，只聊十分钟，你直接来。" },
+  { type: "record", text: "创新药谁先讲的？存储芯片谁标出来的？ CPO 又是谁聊的，都已经高了就不说了。今天呢我再重新给你安排一个新的方向，不说逻辑了，你直接来直播间。" },
+  { type: "news", text: "不要再问创新药还能不能看了，我都快把自己讲吐了。盘后老美那边的新闻，大家注意到没有？我再给安排个新的，这次和之前一样免费公开，你直接来直播间。" },
+  { type: "crisis", text: "调仓调仓调仓啊，节后开盘，先管住手啊，只讲十分钟下播。呃，不是通信设备啊，不是电力光伏，更不是什么化工，假期的利好已经说的是清清楚楚。今天直播只聊十分钟，还不知道的，我马上加播一场。" },
+  { type: "news", text: "别再看那些乱七八糟的消息了，全是误导。我直播间只讲真实资金流向。那接下来主力资金的方向是哪里？来我直播间正在讲。" },
+  { type: "news", text: "直接说结论，明天开盘的走势，可能会非常夸张。如果明天早上出现大幅波动，千万管住手，不要乱操作。我现在紧急加播一场，争取三分钟内给大家把接下来走势讲清楚，还不清楚发生什么的朋友，现在赶快点点关进我直播间。好好来听一听。" },
+  { type: "story", text: "刚回啊，兄弟们，从今天起呢，我将在网络开启直播，每天一个方向，现场演示股市做短线的思路，股民朋友们可以来我直播间，名额不多，点头像来" },
+  { type: "story", text: "他触怒了很多讲股票的人，因为他每天只讲超短线，只讲一个方向。他就是，今天他现场直播，欢迎各位来直播间砸场子。" },
+  { type: "news", text: "20 年前你关注了白酒，十年前你看上了重工，三年前你选择了动力电池。如果这三次机会你都错过了，2026 的行业风口是谁？我是，正在上海。今天正式入驻直播，让你见识一下什么叫做全网确切的股票直播间。" },
+  { type: "news", text: "如果你错过了 3 月的电力板块，也错过了 4 月的 CPO，那接下来 5 月这个细分你再错过的话，你就不适合在 A 股做短线了" },
+  { type: "story", text: "他可能要被很多讲股票的人联合举报了，因为他每天现场选案例，每天只讲一个方向，只讲超短线因此得罪了各路大神，今天他现场直播接受各路大神和不服气的散户的质疑，他就是" },
+  { type: "story", text: "他触怒了很多讲股票的人，因为他每天现场选案例，每天只讲超短线。今天他现场直播，欢迎各位来直播间砸场子，他就是。" },
+  { type: "story", text: "他是轰动一时的 a 股波段男神，每天只讲一个方向，只讲核心。今天他现场直播接受各路大神和不服气的散户来挑战他，他就是" },
+  { type: "news", text: "晚上新出的消息啊，外围又开始摩拳擦掌了。朋友们，这次不是海峡，不是油运，不是石油，也不是黄金和白银。我也没有想到啊，居然是这个方向。现在的话，马上给大家伙加场直播吧，把这个事情给大伙儿讲透，它讲清楚。他那么在咱们中国股市里边，这个方向又该怎么看？大家伙儿点头像就给大伙讲一遍，欢迎新朋友，你可以来砸场子啊。" },
+  { type: "news", text: "晚上的新闻都看到了没有？该来的还是来了。这次的方向是股民非常容易忽略的，不是创新药，也不是商业航天。我现在马上准备回公司呢，给大家加播一场。接下来的反弹大主线很可能就是他快来看看啊，你手里是否持有，还不清楚是什么的点头像我正在讲。" },
+  { type: "news", text: "这下股民可能真的要彻夜难眠了，深夜突发啊，朋友们这件事儿对 a 股的影响会非常大。也许这一次整个市场格局要发生变化了，手里有科技股，你要注意了啊，多少人眼巴巴等的消息终于来了。我本来跟朋友约好了宵夜，现在又一脚油门回公司准备内容了，半夜加播一场先发一条预告视频，你不知道发生什么的，看到我头像正在直播的抓紧进来。" },
+  { type: "news", text: "三月份给大伙儿讲石油，其他直播间还得给大伙聊贵金属。四月份我开始聊电力，其他直播间反而给大伙聊石油。那么五月份了，朋友们啊，我给大伙儿聊个新的，因为外围的话又开始摩拳擦掌了。这次的话不是石油，不是黄金，也不是科技，这个方向很特别。我今天的话给大伙加场直播十分钟，聊明白点头像，欢迎大家伙来撒场子。" },
+  { type: "news", text: "不出意外，意外还是来了，美国股市盘前的全新消息。我今天提前一个小时给大家播，现在是晚上，炒股的朋友给我看过来，我从来没有这么早播过，今天这个一定要抓紧时间，我只播半个小时，我来给大家分析一下啊，到底出了什么事儿。" },
+  { type: "story", text: "一千块钱在股市做短线，什么思路？我刚刚落地上海，从今天开始我将在网络开启直播，每天只讲一个方向，只做短线方向。欢迎大家来我直播间砸场子。" },
+  { type: "story", text: "一千块钱在股市怎么做短线呢？刚刚落地上海，今天呢开始我将在网络开启直播，每天只讲一个方向，只做核心操作。欢迎大家来我直播间呢砸场子。" },
+  { type: "news", text: "你可能不认识我，但是做股票的大概率都听过我的名字。刚刚回到上海，今天呢正式入驻开播，我将演示一千块钱在股市做短线的一个思路，你来我直播间不怕挑战，就怕你不来。亏了就死拿，涨一点就卖了。你这样炒股怎么可能在股市里翻抬头呢？我现在给你一个方向，如果说你想划走，我也不拦着你，毕竟在股市里亏钱的，是你又不是我。点头向进直播间，偷偷领走，直接去见证。" },
+  { type: "news", text: "明天开盘，散户可能人都要傻了。朋友们，深夜发的新闻看到了吗？我现在准备下班，又得去直播。市场出了一个更大的大消息，而且这次是一个大反转，不是军军，也不是半导体。更不是机器人，是一个重大的利好消息。我们整个团队看到这个消息的时候，所有人都围在我的身边讨论这个消息，你们知道 a 股等这个大消息等了多少年吗？赶紧来我直播间，我正在分享给你看点真东西。" },
+  { type: "news", text: "明天开盘，散户可能人都要傻了。朋友们，深夜发的新闻看到了吗？我现在刚收拾好，又得去直播。市场出了一个更大的大消息，而且这次是一个大反转，不是军，也不是半导体。更不是机器人，是一个重大的利好消息。我们整个团队看到这个消息的时候，所有人都围在我的身边讨论这个消息，你们知道 a 股等这个大消息等了多少年吗？还不清楚的赶紧来我直播间。" },
+  { type: "record", text: "来，这下没人怀疑我了吧？2 月的电力，咱们是一战成名。3 月份创新药那是再创辉煌。各位，现在我回来了，今天是正式开播，给各位讲一个新的方向，可能会有不一样的体验，一个下个月的核心主线，那么今年行情怎么样？就看这个方向，想知道的现在抓紧时间来来看 10 分钟，没有回放，现在正在讲重点。" },
+  { type: "crisis", text: "我提醒一句，最近的危险操作，就是追科技，不是说科技不行，而是很多细分方向已经开始分化。一旦你追错节奏，可能要拍断大腿，来我直播间，十分钟讲清楚。" },
+  { type: "news", text: "今天我必须提醒持有高位题材的朋友，别只看有没有反弹，要看反弹时有没有量承接和持续，没有这些，反弹可能只是给你离场的机会，哪种是真反弹？哪种是假反弹？来我直播免费讲。" },
+  { type: "crisis", text: "三月份谁先给你说的 14 个板的华电？四月份是又是谁先给你们说的 100 厘米的长电？当然这些都是老黄历了，如果这两次机会你都错过了，今天呢我再重新给你安排新的方向。现在呢还没有什么人在关注啊，想知道的现在抓紧时间！十分钟，没有回放，现在正在讲重点" },
+  { type: "news", text: "涨完科技股之后，下一个方向不是消费，也不是医药，也不是所谓的券商。那么这个方向的话，在美国股市的话已经是展开了一波大的行情，在咱们中国股市还在底部呢。今天我给大家伙呃重点讲这个方向，手里边有的朋友啊，别轻易的被甩下去了；没有这个方向的朋友也别着急，今天你听我讲了以后，大家伙一定要听仔细了，我就讲一遍，点头像我今天正在给大家伙做分享。" },
+  { type: "news", text: "每年六月份，中国股市很容易变盘，15 年的那个拐点就是六月份出现的。去年市场是不是在六月份突发变盘，七月份、八月份、九月份连涨四个月。那么今年的这个六月份也容易变盘，那么接下来的话，大家伙如果变盘的话，要看一个方向。这个方向它很特殊，行情越不好、行情越没有亮点的时候，它反而啊越是让大家伙刮目相看。这个方向啊，我不给大家伙啰里吧嗦，这个方向我正在给大伙做详细的讲解，点头像大家伙可以来听五分钟。" },
+  { type: "news", text: "就在刚刚，来自于美国股市的消息，我也没有想到会突然出这件事情。我今天的话比较少，已经来到直播间了，不给大家伙啰里吧嗦。咱们今天讲这个事情为什么很突然，这个事情大家伙我们该怎么办？如果还不知道出什么事情的朋友，大家伙点头像来听五分钟的。" },
+  { type: "news", text: "现在大家伙应该认识我了吧？别人还在讲电力的时候，我给大伙讲算力；别人给大伙讲医药的时候，我给大伙讲美国股市出了一个新的科技方向。那么我的粉丝啊，咱们还是老规矩，一万块钱开始，每天的话就给大伙讲一个短线方向。今天这个短线方向也出来了，呃，比较特殊，我之前的话没有聊过，我估计其他直播间也大概率没有聊过。今天我给大伙就讲五分钟。这个方向啊，我就一个要求，我的粉丝朋友们，每个人都要去听一听，新朋友的话，我也欢迎你点我头像，来我直播间，来撒场子。" },
+  { type: "news", text: "涨完科技股之后，下一个方向，不是消费，也不是医药，也不是所谓的券商。那么这个方向的话，在美国股市的话已经是展开了一波大的行情。在咱们中国股市还在底部呢，今天我给大家伙儿重点讲这个方向！手里边有的朋友啊，别轻易的被甩下去的，没有这个方向的朋友也别着急。今天你听我讲了以后，大家一定要听仔细了，我就讲一遍，点头像我今天正在给大家做分享。" },
+  { type: "reverse", text: "你科技跑了没有啊？跑了呀，你上次说完我全都跑了。那就好啊，接下来科技可能要泥沙俱下，可能要套人了。那不看科技我们看什么呢？你是不是没看我直播啊？我已经讲了很多天了，一个低位的补涨全新方向，还不知道怎么看的，可以晚上 9 点来我直播间，我再给你讲一遍。" },
+  { type: "story", text: "兄弟们抓紧调仓换股啊，我刚开完会回来！半导体资金都在撤退了，那电力啊也不行了，很多方向的资金都在流出，只有一个方向，正在被资金大幅度加仓啊，还不知道怎么看，以及该看谁的，抓紧来直播间，我正在聊。" },
+  { type: "news", text: "晚上来自于美国股市的消息，我也没有想到会突然出这件事情。所以我今天才这么早开播，不给大家伙啰里吧嗦。咱们今天讲这个事情为什么这么突然？这个事情大家伙们该怎么办？如果还不知道出什么事情的朋友，大家伙点头像来听五分钟的。" },
+  { type: "news", text: "这波科技股涨起来以后，大家伙现在应该认识我了吧？咱们啊还是老规矩，一万块钱开始，每天只给大伙讲一个短线，对，一个短线，每天晚上给大伙聊聊透它。那么今天的这个短线方向已经出来了，我现在给大伙就讲五分钟，点头像，我欢迎新朋友啊。你可以来砸场子。" }
+];
+function loadDefaultSeeds() {
+  const batchId = 'default-' + Date.now().toString(36);
+  let learnedCount = 0;
+  const typeStats = {};
+
+  DEFAULT_SEEDS.forEach((seed, index) => {
+    const text = seed.text.trim();
+    if (text.replace(/\s/g, '').length < 15) return;
+
+    const detectedType = seed.type;
+    const extracted = extractPhrasesFromScript(text);
+
+    state.knowledgeBase.push({
+      id: batchId + '-' + index,
+      type: detectedType,
+      text: text,
+      extracted: extracted,
+      timestamp: new Date().toISOString(),
+      isSeed: true,
+      batchId: batchId
+    });
+
+    typeStats[detectedType] = (typeStats[detectedType] || 0) + 1;
+    learnedCount++;
+  });
+
+  localStorage.setItem('script_gen_seeded', '1');
+  saveData();
+  updateStats();
+  renderKnowledgeBase();
+
+  const typeNames = {news:'新闻突发',crisis:'危机预警',reverse:'反认知',story:'故事沉浸',dialogue:'对话剧情',record:'战绩背书'};
+  const summary = Object.entries(typeStats)
+    .map(([t, c]) => typeNames[t] + '×' + c)
+    .join('、');
+  return learnedCount;
+}
+
+document.getElementById('btnSeed').addEventListener('click', () => {
+  if (state.knowledgeBase.length > 0) {
+    if (!confirm('知识库已有数据，预置种子会追加而不会覆盖。继续？')) return;
+  }
+
+  const learnedCount = loadDefaultSeeds();
+  showToast('🌱 种子注入完成：' + learnedCount + ' 条');
+});
+
+// ----- 清空 -----
+document.getElementById('btnClear').addEventListener('click', () => {
+  if (confirm('⚠️ 确定要清空所有知识库和生成历史吗？此操作不可恢复。')) {
+    state.knowledgeBase = [];
+    state.history = [];
+    state.currentScripts = [];
+    localStorage.removeItem('script_gen_seeded');
+    saveData();
+
+    // 清空显示
+    document.getElementById('scriptEmpty').style.display = '';
+    document.getElementById('scriptEmpty').innerHTML =
+      '<div class="icon">✍️</div>' +
+      '<p>选择类型和数量<br>点击「生成引流稿」开始创作</p>' +
+      '<p style="font-size:12px;margin-top:8px;color:var(--text-tertiary);">投喂你的爆款稿件可以让生成更精准</p>';
+    document.getElementById('scriptLoading').style.display = 'none';
+    document.getElementById('scriptResults').style.display = 'none';
+    document.getElementById('scriptResults').innerHTML = '';
+    document.getElementById('btnCopy').disabled = true;
+    document.getElementById('btnRegenerate').disabled = true;
+    document.getElementById('historyArea').classList.remove('show');
+    document.getElementById('historyGrid').innerHTML = '';
+
+    updateStats();
+    showToast('🗑 所有数据已清空');
+  }
+});
+
+// ============================================================
+// 历史记录
+// ============================================================
+
+function addToHistory(script) {
+  state.history.unshift({
+    preview: script.full.slice(0, 80),
+    type: script.type,
+    full: script.full,
+    id: script.id,
+    timestamp: script.timestamp
+  });
+
+  // 保留最近50条
+  if (state.history.length > 50) state.history = state.history.slice(0, 50);
+  saveData();
+  renderHistory();
+}
+
+function renderHistory() {
+  const area = document.getElementById('historyArea');
+  const grid = document.getElementById('historyGrid');
+
+  if (state.history.length === 0) {
+    area.classList.remove('show');
+    return;
+  }
+
+  area.classList.add('show');
+  const typeNames = {
+    news: '📰', crisis: '⚠️', reverse: '🔄', story: '📖', dialogue: '💬', record: '🏆'
+  };
+
+  grid.innerHTML = state.history.slice(0, 10).map(h => `
+    <div class="history-item" onclick="loadHistoryItem('${h.id}')">
+      <div class="h-type">${typeNames[h.type] || ''} ${h.type}</div>
+      <div class="h-preview">${escapeHtml(h.preview)}...</div>
+    </div>
+  `).join('');
+}
+
+function loadHistoryItem(id) {
+  const item = state.history.find(h => h.id === id);
+  if (!item) return;
+  const script = {
+    full: item.full,
+    structure: analyzeScriptStructure(item.full) || { hook: '', negate: '', hint: '', cta: '', full: item.full, sentenceCount: item.full.split(/[。！？]/).filter(s => s.trim().length > 0).length },
+    type: item.type,
+    length: 'medium',
+    charCount: item.full.replace(/\s/g, '').length,
+    timestamp: item.timestamp,
+    id: item.id
+  };
+  displayScript(script);
+  state.currentScript = script;
+  showToast('📖 已加载历史稿件');
+}
+
+// ============================================================
+// 持久化
+// ============================================================
+
+function saveData() {
+  try {
+    localStorage.setItem('script_gen_kb', JSON.stringify(state.knowledgeBase));
+    localStorage.setItem('script_gen_history', JSON.stringify(state.history));
+  } catch (e) {
+    // localStorage 满了
+    if (state.knowledgeBase.length > 20) {
+      state.knowledgeBase = state.knowledgeBase.slice(-20);
+    }
+    if (state.history.length > 30) {
+      state.history = state.history.slice(0, 30);
+    }
+    try {
+      localStorage.setItem('script_gen_kb', JSON.stringify(state.knowledgeBase));
+      localStorage.setItem('script_gen_history', JSON.stringify(state.history));
+    } catch {
+      showToast('⚠️ 存储空间不足，部分数据可能丢失');
+    }
+  }
+}
+
+function loadData() {
+  try {
+    const kb = localStorage.getItem('script_gen_kb');
+    if (kb) state.knowledgeBase = JSON.parse(kb);
+
+    const history = localStorage.getItem('script_gen_history');
+    if (history) state.history = JSON.parse(history);
+  } catch (e) {
+    state.knowledgeBase = [];
+    state.history = [];
+  }
+}
+
+// ----- 更新统计 -----
+function updateStats() {
+  document.getElementById('statTotal').textContent = `${state.knowledgeBase.length} 条`;
+  document.getElementById('statGenerated').textContent = `${state.history.length} 条`;
+}
+
+// ----- 键盘快捷键 -----
+document.addEventListener('keydown', (e) => {
+  // Cmd/Ctrl + Enter 生成
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('btnGenerate').click();
+  }
+  // Cmd/Ctrl + Shift + C 复制
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'C') {
+    e.preventDefault();
+    if (state.currentScripts && state.currentScripts.length) document.getElementById('btnCopy').click();
+  }
+  // Escape 关闭模态框/面板
+  if (e.key === 'Escape') {
+    document.getElementById('feedModal').classList.remove('open');
+    document.getElementById('kbPanel').classList.remove('open');
+  }
+});
+
+// ============================================================
+// 初始化
+// ============================================================
+
+function init() {
+  loadData();
+  updateToolbar();
+  updateStats();
+  renderHistory();
+
+  // 如果知识库为空，自动载入全部默认种子（107条原稿）
+  if (state.knowledgeBase.length === 0) {
+    const seeded = localStorage.getItem('script_gen_seeded');
+    if (!seeded) {
+      const count = loadDefaultSeeds();
+      showToast('📚 已自动学习 ' + count + ' 条原稿脚本，即刻开始生成！');
+    }
+  }
+}
+
+init();
+console.log('🎬 短视频引流稿生成器已就绪');
+console.log('   - 选择类型和数量后点击生成');
+console.log('   - 投喂爆款稿以提升精准度');
+console.log('   - Cmd+Enter 快速生成');
+console.log('   - Cmd+Shift+C 快速复制');
+console.log('   - 切换 AI 模式使用 DeepSeek 生成');
+console.log('   - window.runTests() 运行测试套件');
+
+// ============================================================
+// 测试框架
+// ============================================================
+window.runTests = function() {
+  console.log('========== 短视频生成器自检 ==========');
+  const tests = [];
+  const pass = (name) => { tests.push({ name, status: '✅' }); console.log('✅', name); };
+  const fail = (name, err) => { tests.push({ name, status: '❌', error: err }); console.error('❌', name, err); };
+
+  // Test 1: 检查 TYPE_STRUCTURES 完整性
+  try {
+    const types = ['news', 'crisis', 'reverse', 'story', 'dialogue', 'record'];
+    types.forEach(t => {
+      if (!TYPE_STRUCTURES[t]) throw new Error('缺少类型定义: ' + t);
+      if (!TYPE_STRUCTURES[t].sequence || TYPE_STRUCTURES[t].sequence.length === 0)
+        throw new Error('类型 ' + t + ' 缺少结构序列');
+    });
+    pass('6种类型结构定义完整');
+  } catch(e) { fail('类型结构定义', e.message); }
+
+  // Test 2: 检查每种类型能否正常生成
+  try {
+    const testTypes = ['news', 'crisis', 'reverse', 'story', 'dialogue', 'record'];
+    testTypes.forEach(t => {
+      const script = generateScriptRaw(t);
+      if (!script || !script.full || script.full.length < 20)
+        throw new Error('类型 ' + t + ' 生成内容异常: ' + JSON.stringify(script?.full?.substring(0, 50)));
+    });
+    pass('6种类型均能正常生成');
+  } catch(e) { fail('生成功能', e.message); }
+
+  // Test 3: 检查禁词过滤
+  try {
+    const fwResult = hasForbiddenWord('明天开盘散户可能人都要傻了');
+    if (fwResult) throw new Error('正常文案被误判为含禁词: ' + fwResult);
+    pass('禁词过滤正常（不会误判正常文案）');
+  } catch(e) { fail('禁词过滤', e.message); }
+
+  // Test 4: 检查知识库功能
+  try {
+    const initialCount = state.knowledgeBase.length;
+    feedToKB('测试稿件：明天A股开盘可能会有大波动，刚刚突发了这个消息。点头像进直播间');
+    if (state.knowledgeBase.length !== initialCount + 1)
+      throw new Error('知识库投喂后条数未变化');
+    state.knowledgeBase.pop();
+    pass('知识库投喂功能正常');
+  } catch(e) { fail('知识库投喂', e.message); }
+
+  // Test 5: 检查短语池有效性
+  try {
+    const pool = buildPhrasePool();
+    const required = ['eventPhrases', 'emotionPhrases', 'ctaPhrases', 'negateTargetList', 'negatePhrases'];
+    required.forEach(k => {
+      if (!Array.isArray(pool[k]) || pool[k].length === 0)
+        throw new Error('短语池缺少或为空: ' + k);
+    });
+    pass('短语池包含所有必要字段');
+  } catch(e) { fail('短语池', e.message); }
+
+  // Test 6: 检查各类型的独特结构确实不同
+  try {
+    const structures = {
+      news: TYPE_STRUCTURES.news.sequence.map(s => s.id).join(','),
+      crisis: TYPE_STRUCTURES.crisis.sequence.map(s => s.id).join(','),
+      reverse: TYPE_STRUCTURES.reverse.sequence.map(s => s.id).join(','),
+      story: TYPE_STRUCTURES.story.sequence.map(s => s.id).join(','),
+      dialogue: TYPE_STRUCTURES.dialogue.sequence.map(s => s.id).join(','),
+      record: TYPE_STRUCTURES.record.sequence.map(s => s.id).join(','),
+    };
+    const uniqueStructures = new Set(Object.values(structures));
+    if (uniqueStructures.size !== 6)
+      throw new Error('存在相同的类型结构: ' + JSON.stringify(structures));
+    pass('6种类型的结构各不相同（已验证）');
+  } catch(e) { fail('类型结构差异性', e.message); }
+
+  // Test 7: 检查生成结果字数在合理范围
+  try {
+    const script = generateScriptRaw('news');
+    if (!script.charCount || script.charCount < 30)
+      throw new Error('生成内容字数异常: ' + script.charCount);
+    pass('模板生成字数正常（' + script.charCount + '字）');
+  } catch(e) { fail('生成字数', e.message); }
+
+  // Test 8: 检查 TYPE_LABELS 覆盖所有组件
+  try {
+    const allIds = new Set();
+    Object.values(TYPE_STRUCTURES).forEach(t => {
+      t.sequence.forEach(s => allIds.add(s.id));
+    });
+    const missing = [...allIds].filter(id => !TYPE_LABELS[id]);
+    if (missing.length > 0) throw new Error('缺少标签映射: ' + missing.join(', '));
+    pass('所有组件ID都有对应的中文标签');
+  } catch(e) { fail('组件标签', e.message); }
+
+  // Test 9: 生成一条各类型样本并打印
+  try {
+    console.log('\n===== 各类型样本生成结果 =====');
+    ['news', 'crisis', 'reverse', 'story', 'dialogue', 'record'].forEach(t => {
+      const s = generateScriptRaw(t);
+      console.log('\n--- ' + TYPE_STRUCTURES[t].name + ' (' + s.charCount + '字) ---');
+      console.log(s.full);
+      console.log('结构:', Object.keys(s.structure).filter(k => k !== 'full' && s.structure[k]).join(' → '));
+    });
+    pass('样本打印完成（见上方输出）');
+  } catch(e) { fail('样本打印', e.message); }
+
+  // 汇总
+  const passed = tests.filter(t => t.status === '✅').length;
+  const failed = tests.filter(t => t.status === '❌').length;
+  console.log('\n========== 测试结果: ' + passed + '/' + tests.length + ' 通过 ==========');
+  if (failed > 0) {
+    console.error('失败项:', tests.filter(t => t.status === '❌').map(t => t.name));
+  }
+
+  return { total: tests.length, passed, failed, tests };
+};
+</script>
+
+</body>
+</html>
