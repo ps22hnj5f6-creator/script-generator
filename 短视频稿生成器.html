@@ -399,6 +399,7 @@
   }
   .card-btn:hover { border-color: var(--accent); color: var(--accent); }
   .card-btn.copied { border-color: var(--success); color: var(--success); background: rgba(52,199,89,0.06); }
+  .card-btn.quality-done { border-color: #ff9500; color: #ff9500; background: rgba(255,149,0,0.06); cursor: default; }
 
   .script-empty {
     text-align: center;
@@ -2198,7 +2199,7 @@ function displayBatchResults(scripts) {
       }
     }
 
-    html += '\n      <div class="script-card">\n        ' + numberTag + '\n        <div class="script-text">' + scriptBody + '</div>\n        ' + warnTag + '\n        <div class="script-meta" style="display:flex;"><span class="meta-tag">📝 ' + script.charCount + '字</span> <span class="meta-tag">📏 ' + (script.structure.sentenceCount || '?') + '句</span></div>\n        <div class="card-actions">\n          <button class="card-btn" onclick="copySingleScript(event, ' + idx + ')">📋 复制</button>\n          <button class="card-btn" onclick="regenerateSingle(event, ' + idx + ')">🔄 换一版</button>\n        </div>\n      </div>';
+    html += '\n      <div class="script-card">\n        ' + numberTag + '\n        <div class="script-text">' + scriptBody + '</div>\n        ' + warnTag + '\n        <div class="script-meta" style="display:flex;"><span class="meta-tag">📝 ' + script.charCount + '字</span> <span class="meta-tag">📏 ' + (script.structure.sentenceCount || '?') + '句</span></div>\n        <div class="card-actions">\n          <button class="card-btn" onclick="copySingleScript(event, ' + idx + ')">📋 复制</button>\n          <button class="card-btn" onclick="regenerateSingle(event, ' + idx + ')">🔄 换一版</button>\n          <button class="card-btn quality-btn" onclick="markQuality(event, ' + idx + ')">🌟 优质</button>\n        </div>\n      </div>';
   });
   html += '\n</div>';
 
@@ -2266,6 +2267,42 @@ function regenerateSingle(event, idx) {
   displayBatchResults(state.currentScripts);
   updateStats();
   showToast('🔄 已更换 #' + (idx + 1));
+}
+
+// ----- 标记优质并加入知识库 -----
+function markQuality(event, idx) {
+  event.stopPropagation();
+  const script = state.currentScripts[idx];
+  if (!script) return;
+  const btn = event.target;
+
+  // 避免重复添加（相同文本不重复入库）
+  const existing = state.knowledgeBase.find(k => k.text === script.full);
+  if (existing) {
+    showToast('⚠ 该稿件已在知识库中');
+    return;
+  }
+
+  const batchId = 'quality_' + Date.now().toString(36);
+  const extracted = extractPhrasesFromScript(script.full);
+
+  state.knowledgeBase.push({
+    id: batchId + '-0',
+    type: script.type,
+    text: script.full,
+    extracted: extracted,
+    timestamp: new Date().toISOString(),
+    batchId: batchId
+  });
+
+  saveData();
+  updateStats();
+  renderKnowledgeBase();
+
+  btn.classList.add('quality-done');
+  btn.textContent = '✅ 已添加';
+  btn.disabled = true;
+  showToast('🌟 稿件已加入知识库');
 }
 
 function escapeHtml(str) {
