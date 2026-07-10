@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>短视频引流稿生成器</title>
+<title>三组引短文案大模型</title>
 <style>
   :root {
     --bg: #f5f5f7;
@@ -127,63 +127,6 @@
   }
 
   /* AI mode toggle */
-  .ai-toggle-row {
-    display: flex;
-    gap: 8px;
-  }
-  .ai-mode-btn {
-    flex: 1;
-    padding: 8px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--card-bg);
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    transition: var(--transition);
-    text-align: center;
-  }
-  .ai-mode-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .ai-mode-btn.active {
-    border-color: #8b5cf6;
-    background: rgba(139,92,246,0.06);
-    color: #8b5cf6;
-    font-weight: 600;
-  }
-
-  /* AI config */
-  .ai-config {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .api-key-input {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-family: var(--font);
-    color: var(--text);
-    background: var(--card-bg);
-    outline: none;
-    transition: var(--transition);
-  }
-  .api-key-input:focus { border-color: #8b5cf6; }
-  .api-model-select {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-family: var(--font);
-    color: var(--text);
-    background: var(--card-bg);
-    outline: none;
-    cursor: pointer;
-  }
-
   /* Generate button */
 
   .btn-generate {
@@ -201,6 +144,30 @@
   }
   .btn-generate:hover { background: var(--accent-hover); transform: translateY(-0.5px); box-shadow: 0 2px 8px rgba(0,113,227,0.3); }
   .btn-generate:active { transform: translateY(0); }
+
+  /* AI Mode Toggle */
+  .ai-toggle-row { display: flex; gap: 4px; padding: 4px; background: var(--bg); border-radius: 8px; }
+  .ai-mode-btn {
+    flex: 1;
+    padding: 6px 0;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    background: transparent;
+    color: var(--text-secondary);
+  }
+  .ai-mode-btn.active { background: var(--card-bg); color: var(--accent); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .ai-mode-btn img { vertical-align: middle; margin-top: -1px; }
+  .ai-config { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+  .api-key-input {
+    width: 100%; box-sizing: border-box; padding: 7px 12px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 12px; background: var(--card-bg); color: var(--text-primary);
+    outline: none; transition: var(--transition);
+  }
+  .api-key-input:focus { border-color: var(--accent); }
 
   /* Stats */
   .sidebar-stats {
@@ -667,51 +634,68 @@
     animation: pulse 1.2s ease-in-out infinite;
   }
 
-  /* History */
-  .history-area {
-    padding: 0 28px 20px;
-    display: none;
+  /* Right Panel: Recent History */
+  .right-panel {
+    width: 300px;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border);
+    background: rgba(255,255,255,0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
-  .history-area.show { display: block; }
-  .history-area h4 {
+  .right-panel-header {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-secondary);
-    margin-bottom: 10px;
-    padding: 0 12px;
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: -0.2px;
   }
-  .history-grid {
+  .right-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
     display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding: 4px 0 8px;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .right-panel-empty {
+    text-align: center;
+    color: var(--text-tertiary);
+    padding: 40px 16px;
+    font-size: 12px;
+    line-height: 1.6;
   }
   .history-item {
-    min-width: 200px;
-    max-width: 240px;
-    padding: 12px;
+    padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--card-bg);
     cursor: pointer;
     transition: var(--transition);
-    flex-shrink: 0;
   }
-  .history-item:hover { border-color: var(--accent); }
+  .history-item:hover { border-color: var(--accent); background: rgba(0,113,227,0.03); }
   .history-item .h-type {
     font-size: 10px;
     font-weight: 600;
     color: var(--accent);
-    margin-bottom: 4px;
+    margin-bottom: 3px;
   }
   .history-item .h-preview {
     font-size: 12px;
     color: var(--text-secondary);
-    line-height: 1.4;
+    line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  .history-item .h-time {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
   }
 
   /* Scrollbar */
@@ -727,7 +711,7 @@
 <aside class="sidebar">
   <div class="sidebar-logo">
     <span class="icon">🎬</span>
-    <h1>引流稿生成器</h1>
+    <h1>三组引短文案大模型</h1>
   </div>
 
   <div class="section-label">脚本类型</div>
@@ -738,6 +722,7 @@
     <button class="type-btn" data-type="story">📖 故事沉浸型</button>
     <button class="type-btn" data-type="dialogue">💬 对话剧情型</button>
     <button class="type-btn" data-type="record">🏆 战绩背书型</button>
+    <button class="type-btn" data-type="random">🎲 随机</button>
   </div>
 
   <div class="section-label">生成数量</div>
@@ -745,13 +730,6 @@
     <button class="batch-btn active" data-batch="1">1 条</button>
     <button class="batch-btn" data-batch="4">4 条</button>
     <button class="batch-btn" data-batch="8">8 条</button>
-  </div>
-
-  <div class="section-label">🎭 语言风格</div>
-  <div class="batch-row" id="styleRow">
-    <button class="batch-btn active" data-style="aggressive">🔥 激进</button>
-    <button class="batch-btn" data-style="rational">📊 理性</button>
-    <button class="batch-btn" data-style="natural">💬 自然</button>
   </div>
 
   <div class="section-label">📏 文案字数</div>
@@ -763,17 +741,13 @@
 
   <div class="section-label" style="margin-top:4px;">🤖 AI 模型</div>
   <div class="ai-toggle-row">
-    <button class="ai-mode-btn active" data-mode="template" id="modeTemplate">📋 本地</button>
-    <button class="ai-mode-btn" data-mode="deepseek" id="modeDeepseek">🧠 AI</button>
+    <button class="ai-mode-btn active" data-mode="template" id="modeTemplate">📋 本地运算</button>
+    <button class="ai-mode-btn" data-mode="deepseek" id="modeDeepseek"><img src="deepseek-icon.svg" style="width:18px;height:14px;vertical-align:middle;margin-right:4px">DeepSeek</button>
   </div>
   <div class="ai-config" id="aiConfig" style="display:none;">
     <input type="password" class="api-key-input" id="apiKeyInput" placeholder="输入 DeepSeek API Key">
-    <select class="api-model-select" id="modelSelect">
-      <option value="deepseek-chat">DeepSeek V3（快速）</option>
-      <option value="deepseek-reasoner">DeepSeek R1（深度）</option>
-    </select>
     <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px;">
-      Key 仅存储在本地浏览器，不会上传到任何服务器
+      模型：DeepSeek V3（快速） · Key 仅存储在本地浏览器
     </div>
     <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--text-secondary);cursor:pointer;">
       <input type="checkbox" id="proxyToggle" checked style="accent-color:var(--accent);">
@@ -825,11 +799,15 @@
     <div id="scriptResults" style="display:none;"></div>
   </div>
 
-  <div class="history-area" id="historyArea">
-    <h4>📝 最近生成</h4>
-    <div class="history-grid" id="historyGrid"></div>
-  </div>
 </main>
+
+<!-- Right Panel: Recent History -->
+<div class="right-panel" id="rightPanel">
+  <div class="right-panel-header">📝 最近生成</div>
+  <div class="right-panel-body" id="rightPanelBody">
+    <div class="right-panel-empty">暂未生成稿件</div>
+  </div>
+</div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
@@ -882,7 +860,8 @@ const state = {
   batchCount: 1,
   knowledgeBase: [],
   history: [],
-  currentScripts: []  // batch results
+  currentScripts: [],  // batch results
+  totalGenerated: 0    // 累计生成总数（不受50条上限影响）
 };
 
 // ----- 预设种子数据（从方法论提取的核心素材）-----
@@ -1138,91 +1117,463 @@ const DEFAULT_PHRASES = {
     '来，进来亲自验证，我怕你不敢来',
   ],
 
-  // ====== 语言风格专用池 ======
-  // 激进风格 — 更紧迫、更情绪化的表达
-  aggressive: {
-    events: [
-      '来不及多说了，刚出的消息', '一分钟前弹窗弹出来的时候',
-      '我刚刚才收到的消息', '今晚必须把这个说清楚',
-      '紧急插播一条', '快看快看，刚出来的',
-      '谁敢信？就刚刚', '还没来得及消化',
-    ],
-    emotions: [
-      '我现在整个人都在颤抖，不是开玩笑',
-      '我连夜从外地赶回来', '吓得我手机差点掉地上',
-      '我不敢相信这是真的', '我激动得早饭都没吃',
-      '这个消息太炸裂了', '这行情谁看了不慌',
-      '我反复确认了三遍', '我整个人都傻眼了',
-    ],
-    negates: [
-      '赶紧清仓！', '听我的，马上出',
-      '一分钟都别犹豫', '现在再不跑就晚了',
-      '高位接盘的醒醒吧', '这些全在出货了',
-    ],
-    ctas: [
-      '马上点头像进直播间，就讲十分钟',
-      '赶紧来，来不及打字了',
-      '快快快，直接进直播间',
-      '别划走！现在就点进来',
-      '手速快的先进直播间',
-    ],
-  },
-
-  // 理性风格 — 更专业、更分析导向
-  rational: {
-    events: [
-      '关注到盘后有一条公开信息', '今天的复盘有几个发现',
-      '综合研报数据来看', '机构最新观点值得注意',
-      '收盘后的数据显示', '近期政策信号比较明确',
-      '产业链调研反馈', '从基本面看',
-    ],
-    emotions: [
-      '值得深入思考', '这个变化让我重新审视',
-      '这是一个比较重要的参考', '有一些细节值得推敲',
-      '客观讲，市场确实在发生变化', '需要理性看待',
-    ],
-    negates: [
-      '目前建议降低对', '可以重新审视',
-      '适当调仓或许是更好的选择', '前期涨幅较大的板块需要注意风险',
-      '风格切换的信号已经出现', '此消彼长是市场常态',
-    ],
-    ctas: [
-      '进直播间我们一起分析', '来直播间我把逻辑拆解给你听',
-      '想听详细的数据分析，来直播间', '点头像，我们慢慢聊',
-      '直播间正在做系统性的分享',
-    ],
-  },
-
-  // 自然风格 — 更口语、像朋友聊天
-  natural: {
-    events: [
-      '哎，今天盘后有个事儿想跟你们说说',
-      '说实话啊，今天复盘的时候发现',
-      '跟你们讲个有意思的',
-      '不知道你们注意到没有',
-      '今天呢，想跟大家聊点实在的',
-      '我刚刚跟几个朋友聊完',
-    ],
-    emotions: [
-      '说实话我挺意外的', '当时我就觉得不对劲',
-      '越想越有意思', '这让我还挺感慨的',
-      '你看啊，这事儿其实不复杂', '我的直觉告诉我',
-    ],
-    negates: [
-      '还盯着那些的，可能要换个思路了',
-      '有些方向确实已经过了',
-      '咱们别跟风追高的', '老朋友都知道我不追涨',
-      '如果现在还重仓那些，建议考虑一下',
-    ],
-    ctas: [
-      '感兴趣的朋友来直播间坐坐', '有空的话点头像来听会儿',
-      '想聊的更细的，直播间等你',
-      '今天直播间挺热闹的，来玩玩',
-      '不忙的话进来看一眼',
-    ],
-  },
 };
 const FORBIDDEN_WORDS = ["史诗级", "分享一只", "如果你还会亏钱的", "不会让你们失望", "逆风翻盘", "推荐一支", "推荐一只", "好股", "免费赠送热门股", "免费赠送优质股", "免费赠送黑马股", "免费送股票池", "免费送股票名单", "免费送热门股", "免费送优质股", "免费送黑马股", "免费赠送股票名单", "免费赠送股票池", "免费赠送股票", "免费赠送3只股", "免费赠送1只股", "免费赠送三只股", "免费赠送一只股", "免费领股", "免费赠送一只股", "免费领股", "得罪全网", "位置非常低", "主力闻风丧胆", "主力都害怕", "仅限", "限制", "仅卖", "仅有", "仅剩", "只卖", "只剩", "数量有限", "限量", "突发消息", "量化炒股", "量化选股", "AI择股", "AI炒股", "AI选股器", "AI选股", "昨天去见了一位游资大佬", "触碰了很多主力机构的利益", "神器", "佣金返现全额", "免费炒股", "零成本交易", "单笔佣金无最低限制", "低至零佣", "佣金全免", "无佣金", "零佣", "免佣", "万一免五", "未被赶超", "没被赶超", "不会让你失望", "今天买明天卖", "只选一只股票", "从未被超越", "每天一只票", "不会让你失望的", "一姐", "一哥", "可能就会复制", "可能复制", "有望复制", "散户怎么才能实现草根逆袭", "我们整个集团大楼", "你的账户可能就完全不一样了", "实现稳健投资", "封杀", "被所有讲股票的人封杀", "被所有讲股票的人举报", "传奇中的传奇", "得罪了所有讲股票的人", "做大", "最快", "最猛", "暂停交易", "偶像", "盈利先锋", "w赚到", "万赚到", "锁定买卖时机", "牛运亨通", "牛气盈天", "牛气满天", "牛转乾坤", "牛转新机", "牛来运转", "扭转乾坤", "牛气冲天", "提高中签率", "打新成功", "预测走势", "大咖精选机会", "大咖分享股票池", "大咖公开股票池", "7x24小时", "最低价", "最准", "最强", "盘前3只股", "免费送股票", "公开上涨名单", "公布上涨名单", "公开短线名单", "美股", "机构消息", "泄露机密", "揭秘", "内幕", "一国两制", "和平统一", "人才强国", "科教兴国", "百花齐放", "百家争鸣", "全面依法治国", "为人民服务", "不忘初心", "美国政策", "中美博弈", "俄乌冲突", "这只票可能会成为下一只", "走不出涨停，我直接退网", "积少成多", "马上暂停交易", "小灶票", "立竿见影", "此票必买", "一飞冲天", "账户节节高", "跟买跟卖", "严格执行", "抢头彩", "不会让您失望的", "您需要赚钱，我需要您的信任", "翻身", "名额仅剩最后", "私募合作", "原价", "0差评", "收益空间", "第一手", "高抛低吸", "内部消息", "消息票", "高管", "吊打", "涨到你怀疑人生", "新王", "所有的资金和游资都在往里面冲", "所有的资金和油资都在往里面冲", "开创了A股的先河", "跟几位财阀聊完", "在股市里面失去的", "从机构回来", "选出合适的股票", "做到快人一步", "接下来很可能直接停牌", "一知名研究所", "六部门联合发布", "大概率是可以跟着主力蹭上一波", "我的持仓成本价都已经是负数", "如果明天这几支票走不出涨停", "你的账户完全不一样了", "想要快速的放大", "跟资本圈同步起跑的时候", "正式的开始把这个股价拉上去", "换了一辆更好的车", "我不建议追了", "选出来的股票更好一些", "股票反着买别墅靠大海", "只做强势，只会做强势", "及时跟上主力节奏", "及时的跟上主力的节奏", "这个会开创了A股的先河", "再不跑真的来不及了", "小资金做成大资金", "点击进入", "机构离职", "机构辞职", "机构回来", "做强势", "合适的股票", "财阀", "韩国宴", "接下来很可能就是直冲云霄", "不建议追了", "可能就要停牌", "账户完全不一样了", "炒股你想赚钱的", "刚刚拒绝了机构私头邀请", "trading agent的项目研究成果", "知名研究院", "持股不超两小时", "规避", "精准", "盆满钵满", "比你们自己选出来的股票更好", "提前退休", "精选个股", "国际巨鳄", "多个投资机构邀请他加入", "抄底", "回锅", "退役", "操盘手", "私募", "回国", "华尔街", "头部", "魁首", "屎难吃", "冠军", "连续一字板", "一年时间能做到3000%", "从1w做到100w", "从1万做到100万", "挑战用30天时间", "想要的股票", "提前布局", "提前埋伏", "突发利空", "突发利好", "准确", "做到100万", "扯淡", "验证", "能做到3000%", "1000元如何滚成50万", "1000元如何滚成50W", "1W做到100W", "1万做到100万", "一个w", "1个w", "十个w", "10个w", "千本金", "0000本金", "000本金", "领先", "万能", "顶级", "吃口肉", "吃肉", "最后一次", "白嫖", "开挂", "百万", "吃上", "全网都", "回本", "大跌", "庄家", "0成本", "割肉", "满仓", "白嫖", "领股", "量化已经淘汰了", "不需要购买任何的炒股软件", "错过就无", "未曾有过的", "限时", "贸易战", "超跌", "极致", "收益能最大化", "首次", "暴涨", "收入不到", "超越身边", "开大会", "重磅会议", "重要会议", "牛市", "必看 瞧不起你", "很久才同意开放", "权色", "领军", "TOP1", "赚到100万", "实名呼吁", "出台", "套利", "最火", "高收益", "绝佳", "必学", "免税", "sM性", "双开", "当日盈亏", "Sora", "免费送", "数字货币", "牛逼", "最好", "今日盈亏", "内参", "零成本", "首发", "涨停", "挣得比老公多", "提前上车", "换了车", "别墅挨大海", "翻身", "跨越了阶层", "如果你一年的收入不到20W", "铺捉涨停板", "随时爆发", "准确率高达", "AI能够通过大数据算出哪些是主力正在吸收的，等到主力吸引完毕，就会正式开始把股价向上拉", "选择下车即可", "找到大资金看好的股票，让你在早上提前买，早上筹码便宜，随便买都行，但是等到下午大资金进场，抱歉，抢都抢不到了", "操盘", "开盘就封板的股票，高手教我怎么上车", "跨年妖股", "这样风险小", "赚的钱让我大吃一惊", "赚的轻松", "牛股", "直接退休", "守护你的财富安全", "有效规避风险", "能赚钱", "稳操胜券", "稳稳抓住黑马股", "可能让你少打十年工", "相信不会让你失望的", "安全性是很高的", "稳稳躺赢", "能在涨停板上轻松卖出", "即将爆发", "会爆发的股票", "会爆发的主升浪股票", "A类投资咨询机构", "私募合作不实内容", "对冲拉盘", "机构合作票", "购买内幕消息", "自营盘", "年化收益", "固定回报", "高收益回报", "快速回报", "无风险回报", "保本稳赚", "承诺保底", "返本销售", "保底收益", "包回报", "收益率", "特供等借国家", "机关专供", "领导人推荐", "机关推荐", "售罄", "售空", "再不抢就没了", "史上最低价", "没有他就", "错过即无", "卖疯了", "抢疯了", "全民抢购", "全民疯抢", "领取礼品", "点击翻转", "点击试穿", "点击有惊喜", "全民免单", "恭喜获奖", "点击领奖", "纯天然", "无敌", "特效", "祖传", "永久", "前无古人", "王者", "领袖", "巅峰", "至尊", "掌门人", "著名", "巨星", "领先上市", "创领品牌", "缔造者", "王牌", "领袖品牌", "世界领先", "遥遥领先", "随时涨价", "随时结束", "填补国内空白", "国际品质", "中国驰名商标", "国家领导人", "国家级产品", "全国销量冠军", "全国首发", "独家配方", "首选", "独家", "绝佳", "绝对", "极佳", "极品", "尖端", "顶尖", "世界级", "宇宙级", "国家级", "全球级", "一对一", "一次性收费", "一次性付费", "劲爆强势票", "压轴票", "好票", "任何费用", "分析师", "荐股", "知买知卖", "监管", "龙头股", "抄开门红", "老师的服务不会让你失望的", "不会上当的", "我需要您的一份信任", "您需要赚钱", "名额仅剩下最后", "解套", "零差评", "无一失手", "一票赚回服务费", "获利", "大妖", "妖股", "大牛", "金股", "机会空间", "准确率", "胜率", "成功率", "实盘验证"];
+
+const FORBIDDEN_WORD_REPLACEMENTS = {
+  "找到大资金看好的股票，让你在早上提前买，早上筹码便宜，随便买都行，但是等到下午大资金进场，抱歉，抢都抢不到了": "",
+  "AI能够通过大数据算出哪些是主力正在吸收的，等到主力吸引完毕，就会正式开始把股价向上拉": "",
+  "trading agent的项目研究成果": "策略研究",
+  "开盘就封板的股票，高手教我怎么上车": "",
+  "所有的资金和游资都在往里面冲": "资金在持续流入",
+  "所有的资金和油资都在往里面冲": "资金在持续流入",
+  "大概率是可以跟着主力蹭上一波": "",
+  "你的账户可能就完全不一样了": "你的思路可能完全不同",
+  "您需要赚钱，我需要您的信任": "思路供你参考",
+  "我的持仓成本价都已经是负数": "成本已经很低了",
+  "如果明天这几支票走不出涨停": "可能还有波动",
+  "正式的开始把这个股价拉上去": "",
+  "比你们自己选出来的股票更好": "思路可能更清晰",
+  "如果你一年的收入不到20W": "",
+  "触碰了很多主力机构的利益": "",
+  "散户怎么才能实现草根逆袭": "散户怎么跟紧节奏",
+  "接下来很可能就是直冲云霄": "可能有表现",
+  "一年时间能做到3000%": "",
+  "1000元如何滚成50万": "",
+  "1000元如何滚成50W": "",
+  "不需要购买任何的炒股软件": "",
+  "老师的服务不会让你失望的": "值得一看",
+  "昨天去见了一位游资大佬": "",
+  "这只票可能会成为下一只": "这个方向值得关注",
+  "走不出涨停，我直接退网": "可能还有波动",
+  "跟资本圈同步起跑的时候": "跟上节奏",
+  "这个会开创了A股的先河": "是一个标志性事件",
+  "刚刚拒绝了机构私头邀请": "",
+  "多个投资机构邀请他加入": "",
+  "被所有讲股票的人封杀": "争议很大",
+  "被所有讲股票的人举报": "很多人都知道",
+  "得罪了所有讲股票的人": "争议很大",
+  "接下来很可能直接停牌": "",
+  "你的账户完全不一样了": "你的思路可能完全不同",
+  "选出来的股票更好一些": "思路可能更清晰",
+  "股票反着买别墅靠大海": "逆向思维有时反而奏效",
+  "只做强势，只会做强势": "",
+  "及时的跟上主力的节奏": "",
+  "能在涨停板上轻松卖出": "走强",
+  "单笔佣金无最低限制": "",
+  "再不跑真的来不及了": "可能要重新考虑了",
+  "从1w做到100w": "",
+  "从1万做到100万": "",
+  "赚的钱让我大吃一惊": "",
+  "可能让你少打十年工": "",
+  "相信不会让你失望的": "值得一看",
+  "会爆发的主升浪股票": "",
+  "我需要您的一份信任": "",
+  "如果你还会亏钱的": "",
+  "免费赠送股票名单": "聊一个方向",
+  "我们整个集团大楼": "我们团队",
+  "开创了A股的先河": "是一个标志性事件",
+  "在股市里面失去的": "",
+  "换了一辆更好的车": "收获不错",
+  "及时跟上主力节奏": "",
+  "小资金做成大资金": "小资金慢慢滚大",
+  "账户完全不一样了": "你的思路可能完全不同",
+  "挑战用30天时间": "",
+  "能做到3000%": "",
+  "1W做到100W": "",
+  "1万做到100万": "",
+  "守护你的财富安全": "",
+  "A类投资咨询机构": "",
+  "私募合作不实内容": "",
+  "不会让你们失望": "",
+  "免费赠送热门股": "关注一下",
+  "免费赠送优质股": "关注一下",
+  "免费赠送黑马股": "关注一下",
+  "免费送股票名单": "聊一个方向",
+  "免费赠送股票池": "聊一个方向",
+  "免费赠送3只股": "关注一下",
+  "免费赠送1只股": "关注一下",
+  "免费赠送三只股": "关注一下",
+  "免费赠送一只股": "关注一下",
+  "不会让你失望的": "值得一看",
+  "大咖分享股票池": "圈内分享",
+  "大咖公开股票池": "聊一个方向",
+  "不会让您失望的": "值得一看",
+  "涨到你怀疑人生": "涨得很猛",
+  "跟几位财阀聊完": "圈内人",
+  "选出合适的股票": "",
+  "六部门联合发布": "多部门发文",
+  "想要快速的放大": "效率更高",
+  "炒股你想赚钱的": "有收获",
+  "持股不超两小时": "短线思路",
+  "量化已经淘汰了": "",
+  "必看 瞧不起你": "",
+  "很久才同意开放": "",
+  "稳稳抓住黑马股": "",
+  "安全性是很高的": "",
+  "名额仅剩下最后": "",
+  "一票赚回服务费": "",
+  "免费送股票池": "聊一个方向",
+  "免费送热门股": "关注一下",
+  "免费送优质股": "关注一下",
+  "免费送黑马股": "关注一下",
+  "免费赠送股票": "聊一个方向",
+  "主力闻风丧胆": "主力的新方向",
+  "佣金返现全额": "",
+  "不会让你失望": "值得一看",
+  "今天买明天卖": "短线进出",
+  "只选一只股票": "聚焦一个方向",
+  "可能就会复制": "类似的情况也会出现",
+  "实现稳健投资": "稳健思路",
+  "传奇中的传奇": "很有经验",
+  "锁定买卖时机": "把握节奏",
+  "大咖精选机会": "圈内分享",
+  "7x24小时": "全天候",
+  "公开上涨名单": "关注一下",
+  "公布上涨名单": "",
+  "公开短线名单": "关注一下",
+  "全面依法治国": "",
+  "马上暂停交易": "可能还有波动",
+  "名额仅剩最后": "",
+  "做到快人一步": "",
+  "一知名研究所": "研究报告",
+  "我不建议追了": "可以先看看",
+  "可能就要停牌": "可能还有波动",
+  "做到100万": "",
+  "0000本金": "",
+  "收益能最大化": "",
+  "赚到100万": "",
+  "挣得比老公多": "",
+  "选择下车即可": "",
+  "有效规避风险": "",
+  "会爆发的股票": "",
+  "购买内幕消息": "圈内动态",
+  "特供等借国家": "",
+  "再不抢就没了": "",
+  "填补国内空白": "",
+  "中国驰名商标": "",
+  "全国销量冠军": "",
+  "位置非常低": "",
+  "主力都害怕": "主力的新方向",
+  "AI选股器": "选方向",
+  "零成本交易": "",
+  "从未被超越": "一直很稳",
+  "每天一只票": "每天分享一个方向",
+  "提高中签率": "",
+  "盘前3只股": "盘前关注方向",
+  "免费送股票": "聊一个方向",
+  "为人民服务": "",
+  "账户节节高": "",
+  "从机构回来": "刚从机构出来",
+  "合适的股票": "",
+  "不建议追了": "可以先看看",
+  "知名研究院": "研究报告",
+  "连续一字板": "",
+  "想要的股票": "",
+  "000本金": "",
+  "未曾有过的": "",
+  "别墅挨大海": "",
+  "跨越了阶层": "",
+  "铺捉涨停板": "走强",
+  "准确率高达": "",
+  "这样风险小": "",
+  "机构合作票": "",
+  "高收益回报": "",
+  "无风险回报": "",
+  "领导人推荐": "关注一下",
+  "史上最低价": "值得关注",
+  "点击有惊喜": "",
+  "国家领导人": "",
+  "国家级产品": "",
+  "一次性收费": "",
+  "一次性付费": "",
+  "劲爆强势票": "",
+  "不会上当的": "",
+  "您需要赚钱": "",
+  "分享一只": "关注一下",
+  "逆风翻盘": "转机",
+  "推荐一支": "关注一下",
+  "推荐一只": "关注一下",
+  "免费领股": "关注一下",
+  "得罪全网": "争议很大",
+  "数量有限": "",
+  "突发消息": "刚出的消息",
+  "量化炒股": "选方向",
+  "量化选股": "选方向",
+  "AI择股": "选方向",
+  "AI炒股": "选方向",
+  "AI选股": "选方向",
+  "免费炒股": "",
+  "低至零佣": "",
+  "佣金全免": "",
+  "万一免五": "",
+  "未被赶超": "一直很稳",
+  "没被赶超": "一直很稳",
+  "可能复制": "类似的情况也会出现",
+  "有望复制": "类似的情况也会出现",
+  "暂停交易": "可能还有波动",
+  "盈利先锋": "做得不错",
+  "牛运亨通": "机会不错",
+  "牛气盈天": "机会不错",
+  "牛气满天": "机会不错",
+  "牛转乾坤": "机会不错",
+  "牛转新机": "机会不错",
+  "牛来运转": "机会不错",
+  "扭转乾坤": "机会不错",
+  "牛气冲天": "机会不错",
+  "打新成功": "",
+  "预测走势": "分析走势",
+  "机构消息": "圈内动态",
+  "泄露机密": "圈内动态",
+  "一国两制": "",
+  "和平统一": "",
+  "人才强国": "",
+  "科教兴国": "",
+  "百花齐放": "",
+  "百家争鸣": "",
+  "不忘初心": "",
+  "美国政策": "外部环境",
+  "中美博弈": "外部环境",
+  "俄乌冲突": "外部环境",
+  "积少成多": "慢慢积累",
+  "立竿见影": "见效很快",
+  "此票必买": "值得留意",
+  "一飞冲天": "可能有表现",
+  "跟买跟卖": "参考思路",
+  "严格执行": "可以关注",
+  "私募合作": "圈内交流",
+  "收益空间": "空间",
+  "高抛低吸": "波段操作",
+  "内部消息": "圈内动态",
+  "点击进入": "来看看",
+  "机构离职": "刚从机构出来",
+  "机构辞职": "刚从机构出来",
+  "机构回来": "刚从机构出来",
+  "盆满钵满": "收获不小",
+  "提前退休": "",
+  "精选个股": "",
+  "国际巨鳄": "",
+  "提前布局": "",
+  "提前埋伏": "",
+  "突发利空": "",
+  "突发利好": "",
+  "10个w": "",
+  "最后一次": "",
+  "错过就无": "",
+  "收入不到": "",
+  "超越身边": "",
+  "重磅会议": "",
+  "重要会议": "",
+  "TOP1": "",
+  "实名呼吁": "",
+  "当日盈亏": "",
+  "Sora": "",
+  "数字货币": "",
+  "今日盈亏": "",
+  "提前上车": "",
+  "随时爆发": "",
+  "跨年妖股": "",
+  "赚的轻松": "",
+  "直接退休": "",
+  "稳操胜券": "",
+  "稳稳躺赢": "",
+  "即将爆发": "",
+  "对冲拉盘": "",
+  "年化收益": "",
+  "固定回报": "",
+  "快速回报": "",
+  "保本稳赚": "",
+  "承诺保底": "",
+  "返本销售": "",
+  "保底收益": "",
+  "机关专供": "",
+  "机关推荐": "关注一下",
+  "没有他就": "",
+  "错过即无": "",
+  "全民抢购": "",
+  "全民疯抢": "",
+  "领取礼品": "",
+  "点击翻转": "",
+  "点击试穿": "",
+  "全民免单": "",
+  "恭喜获奖": "",
+  "点击领奖": "",
+  "前无古人": "",
+  "领先上市": "",
+  "创领品牌": "",
+  "领袖品牌": "",
+  "世界领先": "",
+  "遥遥领先": "",
+  "随时涨价": "",
+  "随时结束": "",
+  "国际品质": "",
+  "全国首发": "",
+  "独家配方": "",
+  "任何费用": "",
+  "知买知卖": "",
+  "抄开门红": "",
+  "无一失手": "",
+  "机会空间": "",
+  "实盘验证": "",
+  "史诗级": "重大",
+  "无佣金": "",
+  "w赚到": "有收获",
+  "万赚到": "有收获",
+  "最低价": "值得关注",
+  "小灶票": "精选方向",
+  "抢头彩": "抢先",
+  "0差评": "公认",
+  "第一手": "",
+  "消息票": "圈内动态",
+  "做强势": "抓主线",
+  "韩国宴": "行业交流",
+  "操盘手": "",
+  "华尔街": "",
+  "屎难吃": "",
+  "一个w": "",
+  "1个w": "",
+  "十个w": "",
+  "千本金": "",
+  "吃口肉": "",
+  "全网都": "",
+  "0成本": "",
+  "贸易战": "",
+  "开大会": "",
+  "高收益": "",
+  "sM性": "",
+  "免费送": "关注一下",
+  "零成本": "",
+  "换了车": "",
+  "能赚钱": "",
+  "自营盘": "",
+  "包回报": "",
+  "收益率": "",
+  "卖疯了": "",
+  "抢疯了": "",
+  "纯天然": "",
+  "掌门人": "",
+  "缔造者": "",
+  "世界级": "",
+  "宇宙级": "",
+  "国家级": "",
+  "全球级": "",
+  "一对一": "",
+  "压轴票": "",
+  "分析师": "",
+  "龙头股": "",
+  "零差评": "",
+  "准确率": "",
+  "成功率": "",
+  "好股": "好机会",
+  "仅限": "",
+  "限制": "",
+  "仅卖": "",
+  "仅有": "",
+  "仅剩": "",
+  "只卖": "",
+  "只剩": "",
+  "限量": "",
+  "神器": "工具",
+  "零佣": "",
+  "免佣": "",
+  "一姐": "圈内人",
+  "一哥": "圈内人",
+  "封杀": "争议很大",
+  "做大": "",
+  "最快": "值得关注",
+  "最猛": "值得关注",
+  "偶像": "前辈",
+  "最准": "值得关注",
+  "最强": "值得关注",
+  "美股": "海外市场",
+  "揭秘": "分析",
+  "内幕": "圈内动态",
+  "翻身": "转机",
+  "原价": "",
+  "高管": "",
+  "吊打": "远超",
+  "新王": "热点",
+  "财阀": "圈内人",
+  "规避": "避开",
+  "精准": "准确",
+  "抄底": "",
+  "回锅": "",
+  "退役": "",
+  "私募": "",
+  "回国": "",
+  "头部": "",
+  "魁首": "",
+  "冠军": "",
+  "准确": "",
+  "扯淡": "",
+  "验证": "",
+  "领先": "",
+  "万能": "",
+  "顶级": "",
+  "吃肉": "",
+  "白嫖": "",
+  "开挂": "",
+  "百万": "",
+  "吃上": "",
+  "回本": "",
+  "大跌": "",
+  "庄家": "",
+  "割肉": "",
+  "满仓": "",
+  "领股": "",
+  "限时": "",
+  "超跌": "",
+  "极致": "",
+  "首次": "",
+  "暴涨": "",
+  "牛市": "",
+  "权色": "",
+  "领军": "",
+  "出台": "",
+  "套利": "",
+  "最火": "",
+  "绝佳": "",
+  "必学": "",
+  "免税": "",
+  "双开": "",
+  "牛逼": "",
+  "最好": "",
+  "内参": "",
+  "首发": "",
+  "涨停": "走强",
+  "操盘": "",
+  "牛股": "",
+  "售罄": "",
+  "售空": "",
+  "无敌": "",
+  "特效": "",
+  "祖传": "",
+  "永久": "",
+  "王者": "",
+  "领袖": "",
+  "巅峰": "",
+  "至尊": "",
+  "著名": "",
+  "巨星": "",
+  "王牌": "",
+  "首选": "",
+  "独家": "",
+  "绝对": "",
+  "极佳": "",
+  "极品": "",
+  "尖端": "",
+  "顶尖": "",
+  "好票": "",
+  "荐股": "",
+  "监管": "",
+  "解套": "",
+  "获利": "",
+  "大妖": "",
+  "妖股": "",
+  "大牛": "",
+  "金股": "",
+  "胜率": "",
+};
 
 // ============================================================
 // 6大类型的专属结构定义（基于109条原始稿验证）
@@ -1315,68 +1666,50 @@ const TYPE_LABELS = {
   scene: '场景', dialogue: '对话', authority: '权威', proof: '战绩', negateOld: '转换'
 };
 
+// ----- 字数配置 -----
+state.wordCount = 'medium';           // 'short' | 'medium' | 'long'
+
 // ----- DeepSeek 模型配置 -----
 const DEEPSEEK_CONFIG = {
   baseUrl: 'https://api.deepseek.com/chat/completions',
-  // 线上部署时走同源代理，本地开发用 localhost
   proxyUrl: (location.protocol !== 'file:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1')
     ? '/chat/completions'
     : 'http://localhost:3001/chat/completions',
-  models: [
-    { id: 'deepseek-chat', name: 'DeepSeek V3 (推荐)', desc: '快速、性价比高' },
-    { id: 'deepseek-reasoner', name: 'DeepSeek R1 (深度推理)', desc: '慢但更精准' }
-  ],
-  defaultModel: 'deepseek-chat',
+  model: 'deepseek-chat',
   maxTokens: 800,
   temperature: 0.85
 };
 
-// ----- 语言风格与字数配置 -----
-state.languageStyle = 'aggressive';  // 'aggressive' | 'rational' | 'natural'
-state.wordCount = 'medium';           // 'short' | 'medium' | 'long'
-
 // ----- AI 模式状态 -----
 state.aiMode = 'template';  // 'template' | 'deepseek'
-state.aiModel = 'deepseek-chat';
 state.aiApiKey = '';
-state.useProxy = true;  // 默认使用本地代理（解决 CORS）
+state.useProxy = true;
 
 // ============================================================
 // DeepSeek API 调用
 // ============================================================
 
-// 构建 DeepSeek 提示词
-// ====== 从种子库提取少样本范例 ======
 // 从知识库随机选一条种子稿（优先匹配当前类型）
 function pickRandomSeed(type) {
-  // 1. 从知识库中找匹配类型的
   const sameType = state.knowledgeBase.filter(item => item.type === type);
   if (sameType.length > 0) {
     return sameType[Math.floor(Math.random() * sameType.length)].text;
   }
-  
-  // 2. 知识库中没有同类型，从全部知识库随机选
   if (state.knowledgeBase.length > 0) {
     return state.knowledgeBase[Math.floor(Math.random() * state.knowledgeBase.length)].text;
   }
-  
-  // 3. 知识库为空，从内置种子中选
   const sameTypeSeeds = DEFAULT_SEEDS.filter(s => s.type === type);
   if (sameTypeSeeds.length > 0) {
     return sameTypeSeeds[Math.floor(Math.random() * sameTypeSeeds.length)].text;
   }
-  
-  // 4. 最后的兜底：从全部内置种子随机选
   return DEFAULT_SEEDS[Math.floor(Math.random() * DEFAULT_SEEDS.length)].text;
 }
 
-function buildDeepSeekPrompt(type, seedText, languageStyle = 'aggressive', wordCount = 'medium') {
-  // 字数范围
+function buildDeepSeekPrompt(type, seedText, wordCount = 'medium') {
   const charRange = WORD_COUNT_CONFIG[wordCount]?.targetChars || 150;
   const charMin = Math.floor(charRange * 0.7);
   const charMax = Math.ceil(charRange * 1.3);
-  
-  // ========== 自媒体爆款范例（Few-shot 锚定语感） ==========
+
   const fewShotExamples = `## 爆款范例（你必须模仿这种语气、节奏、用词）
 
 范例1（新闻突发型）：
@@ -1394,7 +1727,6 @@ function buildDeepSeekPrompt(type, seedText, languageStyle = 'aggressive', wordC
 - 直面观众："你不知道""你看不出来吗""听懂了没有"
 - 用分段和空行制造节奏感，一条稿子至少分3-4个自然段`;
 
-  // ========== 反向约束：禁止书面词 → 自媒体替换 ==========
   const forbiddenWordsTable = `## 禁止使用的书面词（违者重写）
 
 以下词是自媒体稿的毒药，绝对不能出现。用右边代替：
@@ -1412,7 +1744,6 @@ function buildDeepSeekPrompt(type, seedText, languageStyle = 'aggressive', wordC
 | 估值偏高/偏低 | 贵了 / 便宜 |
 | 应当/需/可 | 要 / 得`;
 
-  // ========== 分层提示：否定点名 vs 新机会模糊 ==========
   const layeredRule = `## 板块提及的黄金法则
 
 否定旧板块 → 必须点名：
@@ -1429,31 +1760,23 @@ function buildDeepSeekPrompt(type, seedText, languageStyle = 'aggressive', wordC
 
 ❌ 绝对不能在暗示新机会时说具体板块名！不要把"电力""机器人"放在机会暗示的位置！`;
 
-  // 风格指令（保持原有动态拼接）
-  const styleInstructions = {
-    aggressive: `语气风格（激进紧迫型）：
-- 节奏快、句子短，每句10-15字，不超过20字
-- 用感叹号和反问增强紧迫感（但不过度）
-- 情绪饱满但真实，像真正被市场消息震撼到的分析师
-- 否定果断、不留余地："别看XX了""XX已经结束了""赶紧换方向"
-- CTA干脆直接："马上进直播间""就讲十分钟""别等了"`,
+  const personalEmotion = `## 个人情绪表达（不是每条都加，在稿子需要的地方加）
 
-    rational: `语气风格（理性分析型）：
-- 句子清晰有力，每句12-25字
-- 用数据和逻辑说话，不煽情不恐吓
-- 像专业研究报告的口语版——有依据、有判断、有建议
-- 否定要讲原因："XX板块资金已持续流出""从基本面看，XX估值偏高"
-- CTA邀请但不强迫："进直播间我把逻辑拆解给你听""一起来分析"`,
+什么时候加情绪：
+- 消息特别炸裂 → "我整个人都在颤抖，不是开玩笑"
+- 看到反常识数据 → "我反复看了三遍才敢相信"
+- 回忆起过去经历 → "去年这时候，一模一样的情况"
+- 替散户惋惜 → "我知道很多人还舍不得走"
+- 坚定判断 → "我今天就把话放这儿"
 
-    natural: `语气风格（自然邀约型）：
-- 像跟老朋友聊天一样自然，不用专业术语堆砌
-- 必须用"说实话""你看""咱们""我跟你说"这类口语词
-- 不要太激烈，像茶余饭后分享一个观察
-- 否定要温和但清晰："XX方向确实不太适合现在看了""咱们换个思路"
-- CTA友好自然："感兴趣可以来直播间坐坐""有空的话进来聊会儿"`
-  };
+什么时候不加：
+- 稿子本身是冷静分析型，硬塞情绪反而假
+- 前面已经加过了，不重复
+- ~100字的短稿，一句情绪就够
 
-  const styleGuide = styleInstructions[languageStyle] || styleInstructions.aggressive;
+关键：情绪要像真的，不像演出来的。加一句就好，不要铺满。自媒体最怕用力过猛。
+好的示例："我激动得早饭都没吃"
+差的示例："这个信号非常令人振奋"`;
 
   const typeGuides = {
     news: '以一段突发新闻/盘后消息开篇，制造"别人还不知道"的信息差',
@@ -1472,7 +1795,7 @@ ${forbiddenWordsTable}
 
 ${layeredRule}
 
-${styleGuide}
+${personalEmotion}
 
 稿件类型：${typeGuides[type] || typeGuides.news}
 
@@ -1496,24 +1819,20 @@ ${seedText}
   return { system: systemPrompt, user: userPrompt };
 }
 
-
 // 调用 DeepSeek API
 async function callDeepSeekAPI(systemPrompt, userPrompt) {
-  // 从输入框获取并清理 API Key：只保留可打印 ASCII，排除非法 Unicode
   const rawKey = state.aiApiKey || document.getElementById('apiKeyInput').value.trim();
   const apiKey = rawKey.replace(/[^\x20-\x7e]/g, '');
   if (!apiKey) throw new Error('请先输入 DeepSeek API Key（仅支持英文和数字）');
 
-  const model = state.aiModel;
   const url = state.useProxy ? DEEPSEEK_CONFIG.proxyUrl : DEEPSEEK_CONFIG.baseUrl;
 
-  // 用 Headers 对象确保所有值都是合法的 HTTP 头
   const headers = new Headers();
   headers.set('Content-Type', 'application/json');
   headers.set('Authorization', 'Bearer ' + apiKey);
 
   const body = JSON.stringify({
-    model: model,
+    model: DEEPSEEK_CONFIG.model,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
@@ -1525,9 +1844,8 @@ async function callDeepSeekAPI(systemPrompt, userPrompt) {
 
   let response;
   try {
-    response = await fetch(url, { method: 'POST', headers: headers, body: body });
+    response = await fetch(url, { method: 'POST', headers, body });
   } catch (fetchErr) {
-    // 代理不可用时，给出明确的指引
     if (state.useProxy && fetchErr.message && fetchErr.message.includes('fetch')) {
       throw new Error(
         '代理连接失败。请确认：\n' +
@@ -1539,11 +1857,9 @@ async function callDeepSeekAPI(systemPrompt, userPrompt) {
     throw new Error('请求失败: ' + fetchErr.message);
   }
 
-  // 检查响应是否为 JSON，否则是代理/网络问题
   const ct = response.headers.get('content-type') || '';
   if (!ct.includes('application/json')) {
     const preview = (await response.text().catch(() => '')).substring(0, 200);
-    // 代理未启动返回 HTML/错误页
     if (preview.includes('<!DOCTYPE') || preview.includes('<html')) {
       throw new Error(
         '代理返回了网页而非 API 数据。本地使用时请确认已启动代理：\n' +
@@ -1566,35 +1882,31 @@ async function callDeepSeekAPI(systemPrompt, userPrompt) {
     throw new Error('API 返回了无法解析的内容，请确认 DeepSeek API Key 有效且代理正常');
   }
   const text = data.choices?.[0]?.message?.content || '';
-  
+
   if (!text.trim()) throw new Error('API 返回内容为空，请检查 Key 是否正确');
 
   return text.trim();
 }
 
-// DeepSeek 模式下的生成流程：先用模板生成一条稿子，再让 DeepSeek 仿写润色
+// DeepSeek 模式下的生成流程
 async function generateWithDeepSeek(type) {
-  // 先用模板生成一条稿子，再让 DeepSeek 仿写润色
-  const templateScript = generateScriptRaw(type, state.languageStyle, state.wordCount);
+  const templateScript = generateScriptRaw(type, state.wordCount);
   const seedText = templateScript.full;
-  const { system: systemPrompt, user: userPrompt } = buildDeepSeekPrompt(type, seedText, state.languageStyle, state.wordCount);
+  const { system: systemPrompt, user: userPrompt } = buildDeepSeekPrompt(type, seedText, state.wordCount);
   const text = await callDeepSeekAPI(systemPrompt, userPrompt);
-  
-  // 禁词过滤
+
   const hasFW = hasForbiddenWord(text);
   let cleanText = hasFW ? censorScriptRaw(text) : text;
-  
-  // ===== 后处理安全网：模糊化新机会中的板块名 =====
+
   cleanText = fuzzyOpportunityPlateNames(cleanText);
-  
+
   const remainingFW = hasForbiddenWord(cleanText);
-  
-  // 构建结果对象
+
   const charCount = cleanText.replace(/\s/g, '').length;
   const sentences = cleanText.split(/[。！？\n]/).filter(s => s.trim());
-  
+
   const structureObj = { full: cleanText, sentenceCount: sentences.length };
-  
+
   return {
     full: cleanText,
     structure: structureObj,
@@ -1609,14 +1921,31 @@ async function generateWithDeepSeek(type) {
   };
 }
 
-// 对纯文本进行禁词过滤（不依赖 script 对象）
+
 function censorScriptRaw(text) {
   for (let retry = 0; retry < 8; retry++) {
     const word = hasForbiddenWord(text);
     if (!word) return text;
-    text = text.replace(new RegExp(word, 'g'), '【已过滤】');
+    // 查替换表中的自然替代词，没有则删除
+    const replacement = FORBIDDEN_WORD_REPLACEMENTS[word];
+    if (replacement !== undefined) {
+      if (replacement === '') {
+        // 直接删除该词
+        text = text.split(word).join('');
+      } else {
+        text = text.replace(new RegExp(escapeRegex(word), 'g'), replacement);
+      }
+    } else {
+      // 找不到映射，直接删除
+      text = text.split(word).join('');
+    }
   }
   return text;
+}
+
+// 转义正则特殊字符
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // ===== 后处理安全网：将 AI 输出中新机会部分的板块名模糊化 =====
@@ -1731,7 +2060,7 @@ function censorScript(script, maxRetries = 8) {
   for (let i = 0; i < maxRetries; i++) {
     const found = hasForbiddenWord(script.full);
     if (!found) return { script, clean: true, retries: i };
-    script = generateScriptRaw(script.type, script.languageStyle || 'aggressive', script.wordCount || 'medium');
+    script = generateScriptRaw(script.type, script.wordCount || 'medium');
   }
   const found = hasForbiddenWord(script.full);
   return { script, clean: !found, retries: maxRetries, dirtyWord: found };
@@ -2484,28 +2813,15 @@ const WORD_COUNT_CONFIG = {
   long:   { extraSections: 2, targetChars: 220, label: '~220字' },
 };
 
-// ====== 语言风格应用到短语池 ======
-function applyStyleToPool(pool, style) {
-  if (!pool[style]) return; // 没有对应风格池则跳过
-  
-  const sp = pool[style];
-  // 用风格专用内容替换/补充通用池
-  if (sp.events?.length)    pool.eventPhrases    = [...new Set([...sp.events, ...pool.eventPhrases])];
-  if (sp.emotions?.length)  pool.emotionPhrases  = [...new Set([...sp.emotions, ...pool.emotionPhrases])];
-  if (sp.negates?.length)   pool.negatePhrases   = [...new Set([...sp.negates, ...pool.negatePhrases])];
-  if (sp.ctas?.length)      pool.ctaPhrases      = [...new Set([...sp.ctas, ...pool.ctaPhrases])];
-}
 
 // ====== 统一分发（原始生成，不含禁词过滤）======
-function generateScriptRaw(type, languageStyle = 'aggressive', wordCount = 'medium') {
+function generateScriptRaw(type, wordCount = 'medium') {
   const pool = buildPhrasePool();
   // 否定目标使用上月市场表现好的板块
   pool.negateTargetList = getMonthlyHotSectors();
-  // 应用语言风格
-  applyStyleToPool(pool, languageStyle);
   
   const wcConfig = WORD_COUNT_CONFIG[wordCount] || WORD_COUNT_CONFIG.medium;
-  const cfg = { extraSections: wcConfig.extraSections, languageStyle, wordCount };
+  const cfg = { extraSections: wcConfig.extraSections, wordCount };
   
   let result;
   switch (type) {
@@ -2526,16 +2842,25 @@ function generateScriptRaw(type, languageStyle = 'aggressive', wordCount = 'medi
     structure: result.structure,
     type,
     charCount,
-    languageStyle,
+
     wordCount,
     timestamp: new Date().toISOString(),
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
   };
 }
 
+// ====== 随机类型解析 ======
+const ALL_TYPES = ['news', 'crisis', 'reverse', 'story', 'dialogue', 'record'];
+
+function resolveType(type, allowSame = false) {
+  if (type !== 'random') return type;
+  return ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
+}
+
 // ====== 带禁词过滤的生成（UI调用的入口）======
 function generateScript(type) {
-  const script = generateScriptRaw(type, state.languageStyle, state.wordCount);
+  const actualType = resolveType(type);
+  const script = generateScriptRaw(actualType, state.wordCount);
   return censorScript(script);
 }
 
@@ -2575,18 +2900,14 @@ document.getElementById('modeDeepseek').addEventListener('click', () => {
   state.aiMode = 'deepseek';
   document.getElementById('modeDeepseek').classList.add('active');
   document.getElementById('modeTemplate').classList.remove('active');
-  document.getElementById('aiConfig').style.display = 'block';
-  document.getElementById('btnGenerate').textContent = '🧠 AI 生成引流稿';
+  document.getElementById('aiConfig').style.display = 'flex';
+  document.getElementById('btnGenerate').innerHTML = '<img src="deepseek-icon.svg" style="width:18px;height:14px;vertical-align:middle;margin-right:4px">DeepSeek 生成引流稿';
 });
 
-// 保存/恢复 API Key
+// 保存 API Key
 document.getElementById('apiKeyInput').addEventListener('input', (e) => {
   state.aiApiKey = e.target.value;
   try { localStorage.setItem('ds_api_key', e.target.value); } catch {}
-});
-document.getElementById('modelSelect').addEventListener('change', (e) => {
-  state.aiModel = e.target.value;
-  try { localStorage.setItem('ds_model', e.target.value); } catch {}
 });
 
 // 代理开关
@@ -2595,41 +2916,30 @@ document.getElementById('proxyToggle').addEventListener('change', (e) => {
   try { localStorage.setItem('ds_use_proxy', e.target.checked ? '1' : '0'); } catch {}
 });
 
-// 恢复已保存的 Key、Model 和代理设置
-(function() {
-  try {
-    const savedKey = localStorage.getItem('ds_api_key');
-    const savedModel = localStorage.getItem('ds_model');
-    const savedProxy = localStorage.getItem('ds_use_proxy');
-    if (savedKey) {
-      state.aiApiKey = savedKey;
-      document.getElementById('apiKeyInput').value = savedKey;
-    }
-    if (savedModel) {
-      state.aiModel = savedModel;
-      document.getElementById('modelSelect').value = savedModel;
-    }
-    if (savedProxy !== null) {
-      state.useProxy = savedProxy !== '0';
-      document.getElementById('proxyToggle').checked = state.useProxy;
-    }
-    // 恢复语言风格和字数设置
-    const savedStyle = localStorage.getItem('script_gen_style');
-    if (savedStyle) {
-      state.languageStyle = savedStyle;
-      document.querySelectorAll('#styleRow .batch-btn').forEach(b => b.classList.remove('active'));
-      const styleBtn = document.querySelector('#styleRow .batch-btn[data-style="' + savedStyle + '"]');
-      if (styleBtn) styleBtn.classList.add('active');
-    }
-    const savedWords = localStorage.getItem('script_gen_words');
-    if (savedWords) {
-      state.wordCount = savedWords;
-      document.querySelectorAll('#wordCountRow .batch-btn').forEach(b => b.classList.remove('active'));
-      const wordsBtn = document.querySelector('#wordCountRow .batch-btn[data-words="' + savedWords + '"]');
-      if (wordsBtn) wordsBtn.classList.add('active');
-    }
-  } catch {}
-})();
+// 恢复已保存的 Key 和代理设置
+try {
+  const savedKey = localStorage.getItem('ds_api_key');
+  const savedProxy = localStorage.getItem('ds_use_proxy');
+  if (savedKey) {
+    state.aiApiKey = savedKey;
+    document.getElementById('apiKeyInput').value = savedKey;
+  }
+  if (savedProxy !== null) {
+    state.useProxy = savedProxy !== '0';
+    document.getElementById('proxyToggle').checked = state.useProxy;
+  }
+} catch {}
+
+// 恢复字数设置
+try {
+  const savedWords = localStorage.getItem('script_gen_words');
+  if (savedWords) {
+    state.wordCount = savedWords;
+    document.querySelectorAll('#wordCountRow .batch-btn').forEach(b => b.classList.remove('active'));
+    const wordsBtn = document.querySelector('#wordCountRow .batch-btn[data-words="' + savedWords + '"]');
+    if (wordsBtn) wordsBtn.classList.add('active');
+  }
+} catch {}
 
 // ----- 生成数量选择 -----
 document.getElementById('batchRow').addEventListener('click', (e) => {
@@ -2638,16 +2948,6 @@ document.getElementById('batchRow').addEventListener('click', (e) => {
   document.querySelectorAll('#batchRow .batch-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   state.batchCount = parseInt(btn.dataset.batch);
-});
-
-// ----- 语言风格选择 -----
-document.getElementById('styleRow').addEventListener('click', (e) => {
-  const btn = e.target.closest('.batch-btn');
-  if (!btn) return;
-  document.querySelectorAll('#styleRow .batch-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  state.languageStyle = btn.dataset.style;
-  try { localStorage.setItem('script_gen_style', btn.dataset.style); } catch {}
 });
 
 // ----- 文案字数选择 -----
@@ -2664,7 +2964,8 @@ document.getElementById('wordCountRow').addEventListener('click', (e) => {
 function updateToolbar() {
   const typeNames = {
     news: '新闻突发型', crisis: '危机预警型', reverse: '反认知型',
-    story: '故事沉浸型', dialogue: '对话剧情型', record: '战绩背书型'
+    story: '故事沉浸型', dialogue: '对话剧情型', record: '战绩背书型',
+    random: '随机'
   };
 
   document.getElementById('toolbarTitle').textContent = typeNames[state.scriptType] || state.scriptType;
@@ -2747,7 +3048,7 @@ function showLoading(current, total) {
     '<div class="loading-progress"><div class="loading-progress-bar" style="width:' + pct + '%"></div></div>';
 }
 
-// 更新加载状态的文字（用于 AI 模式）
+// 更新加载状态的文字（保留备用）
 function updateLoadingText(subText) {
   const sub = document.querySelector('.loading-sub');
   if (sub) sub.textContent = subText;
@@ -2854,19 +3155,21 @@ document.getElementById('btnGenerate').addEventListener('click', async () => {
       let censored = 0;
 
       if (isAI) {
-        // ====== AI 模式 ======
+        // ====== DeepSeek 模式 ======
         for (let i = 0; i < count; i++) {
           if (count > 1) showLoading(i + 1, count);
           updateLoadingText('正在请求 DeepSeek 生成第 ' + (i + 1) + ' 条...');
-          const script = await generateWithDeepSeek(state.scriptType);
+          const actualType = resolveType(state.scriptType, count > 1);
+          const script = await generateWithDeepSeek(actualType);
           results.push(script);
           addToHistory(script);
         }
       } else {
-        // ====== 模板模式 ======
+        // ====== 本地模式 ======
         for (let i = 0; i < count; i++) {
           if (count > 1) showLoading(i + 1, count);
-          const result = generateScript(state.scriptType);
+          const actualType = resolveType(state.scriptType, count > 1);
+          const result = generateScript(actualType);
           if (!result.clean) censored++;
           results.push({ ...result.script, censoredRetries: result.retries, clean: result.clean, dirtyWord: result.dirtyWord });
           addToHistory(result.script);
@@ -2877,7 +3180,7 @@ document.getElementById('btnGenerate').addEventListener('click', async () => {
       displayBatchResults(results);
 
       const msg = isAI
-        ? '✅ AI 生成完成'
+        ? '✅ DeepSeek 生成完成'
         : (count > 1
           ? '✅ 已生成 ' + count + ' 条' + (censored > 0 ? '（' + censored + ' 条经禁词过滤）' : '')
           : '✅ 生成完成' + (censored > 0 ? '（经禁词过滤）' : ''));
@@ -2890,10 +3193,10 @@ document.getElementById('btnGenerate').addEventListener('click', async () => {
         '<div class="icon">⚠️</div>' +
         '<p>生成过程中出现错误</p>' +
         '<p style="font-size:12px;margin-top:8px;color:var(--danger);">' + escapeHtml(err.message) + '</p>' +
-        '<p style="font-size:12px;margin-top:12px;color:var(--text-tertiary);">请检查知识库是否正常加载，或切换到本地模式</p>';
+        (isAI ? '<p style="font-size:12px;margin-top:12px;color:var(--text-tertiary);">请检查 API Key 是否正确，或切换到本地运算模式</p>' : '');
       showToast('❌ 生成失败: ' + err.message);
     } finally {
-      btn.textContent = isAI ? '🧠 AI 生成引流稿' : '✨ 生成引流稿';
+      btn.innerHTML = isAI ? '<img src="deepseek-icon.svg" style="width:18px;height:14px;vertical-align:middle;margin-right:4px">DeepSeek 生成引流稿' : '✨ 生成引流稿';
       btn.classList.remove('generating');
       btn.disabled = false;
       updateStats();
@@ -3041,7 +3344,7 @@ document.getElementById('feedText').addEventListener('input', () => {
   preview.style.display = 'block';
 });
 
-// ----- 投喂确认（批量学习）-----
+// ----- 投喂确认（批量学习，带去重）-----
 document.getElementById('btnFeedConfirm').addEventListener('click', () => {
   const text = document.getElementById('feedText').value.trim();
   const typeSelect = document.getElementById('feedType').value;
@@ -3058,24 +3361,22 @@ document.getElementById('btnFeedConfirm').addEventListener('click', () => {
     return;
   }
 
-  let learnedCount = 0;
-  const typeStats = {};
   const batchId = Date.now().toString(36);
+  let index = 0;
 
-  scripts.forEach((scriptText, index) => {
+  // 构建待导入列表
+  const itemsToAdd = [];
+  scripts.forEach((scriptText) => {
     if (scriptText.replace(/\s/g, '').length < 15) return;
 
-    // 类型识别
     let detectedType = typeSelect;
     if (typeSelect === 'auto') {
       detectedType = autoDetectType(scriptText);
     }
 
-    // 提取短语
     const extracted = extractPhrasesFromScript(scriptText);
 
-    // 添加到知识库
-    state.knowledgeBase.push({
+    itemsToAdd.push({
       id: batchId + '-' + index,
       type: detectedType,
       text: scriptText,
@@ -3083,10 +3384,20 @@ document.getElementById('btnFeedConfirm').addEventListener('click', () => {
       timestamp: new Date().toISOString(),
       batchId: batchId
     });
-
-    typeStats[detectedType] = (typeStats[detectedType] || 0) + 1;
-    learnedCount++;
+    index++;
   });
+
+  // 去重
+  const { deduped, skipped } = dedupScripts(itemsToAdd, state.knowledgeBase);
+
+  // 统计类型
+  const typeStats = {};
+  deduped.forEach(item => {
+    typeStats[item.type] = (typeStats[item.type] || 0) + 1;
+  });
+
+  // 添加到知识库
+  state.knowledgeBase.push(...deduped);
 
   // 保存
   saveData();
@@ -3104,7 +3415,9 @@ document.getElementById('btnFeedConfirm').addEventListener('click', () => {
     .map(([t, c]) => `${typeNames[t]||t}×${c}`)
     .join('、');
 
-  showToast(`✅ 批量学习完成：${learnedCount} 条（${summary}）`);
+  let msg = `✅ 批量学习完成：${deduped.length} 条（${summary}）`;
+  if (skipped > 0) msg += `，已跳过 ${skipped} 条重复`;
+  showToast(msg);
 });
 
 // ----- 自动识别脚本类型 -----
@@ -3137,6 +3450,80 @@ function autoDetectType(text) {
   return bestType;
 }
 
+// ====== 去重逻辑 ======
+// 去重定义：两条文案满足以下任一条件即为重复
+// 1. 最长公共子串 >= 35字
+// 2. Jaccard字符集相似度 > 0.7（去空格后）
+// 3. 去除空白符后逐字相同
+
+function longestCommonSubstring(a, b) {
+  const s1 = a.replace(/\s/g, '');
+  const s2 = b.replace(/\s/g, '');
+  if (!s1 || !s2) return 0;
+  let maxLen = 0;
+  // 用短串去长串中找
+  const shorter = s1.length < s2.length ? s1 : s2;
+  const longer = s1.length < s2.length ? s2 : s1;
+  for (let i = 0; i < shorter.length; i++) {
+    let j = shorter.length;
+    while (j > i && (j - i) > maxLen) {
+      if (longer.indexOf(shorter.slice(i, j)) !== -1) {
+        maxLen = j - i;
+        break;
+      }
+      j--;
+    }
+    if (maxLen >= 35) break; // 早停
+  }
+  return maxLen;
+}
+
+function jaccardCharSimilarity(a, b) {
+  const s1 = a.replace(/\s/g, '');
+  const s2 = b.replace(/\s/g, '');
+  if (!s1 || !s2) return 0;
+  const set1 = new Set(s1.split(''));
+  const set2 = new Set(s2.split(''));
+  const intersection = new Set([...set1].filter(x => set2.has(x)));
+  const union = new Set([...set1, ...set2]);
+  return intersection.size / union.size;
+}
+
+function isDuplicate(textA, textB) {
+  if (!textA || !textB) return false;
+  // 条件3：去空白后完全相同
+  if (textA.replace(/\s/g, '') === textB.replace(/\s/g, '')) return true;
+  // 条件1：最长公共子串 >= 35字
+  if (longestCommonSubstring(textA, textB) >= 35) return true;
+  // 条件2：Jaccard > 0.7
+  if (jaccardCharSimilarity(textA, textB) > 0.7) return true;
+  return false;
+}
+
+// 去重数组，返回去重后的数组和跳过的条数
+function dedupScripts(items, existingItems) {
+  const deduped = [];
+  let skipped = 0;
+  const allExisting = existingItems ? [...existingItems] : [];
+  
+  items.forEach(item => {
+    const text = item.text || '';
+    if (text.replace(/\s/g, '').length < 15) {
+      skipped++;
+      return;
+    }
+    // 与已有数据比对
+    const dup = allExisting.some(existing => isDuplicate(text, existing.text));
+    if (dup) {
+      skipped++;
+      return;
+    }
+    deduped.push(item);
+    allExisting.push(item); // 加入已存在集合，防止内部重复
+  });
+  return { deduped, skipped };
+}
+
 // ----- 知识库面板 -----
 document.getElementById('btnKb').addEventListener('click', () => {
   document.getElementById('kbPanel').classList.add('open');
@@ -3156,7 +3543,7 @@ function renderKnowledgeBase() {
 
   const typeNames = {
     news: '📰 新闻突发', crisis: '⚠️ 危机预警', reverse: '🔄 反认知',
-    switch: '🔄 赛道切换', era: '🔭 时代叙事', scarcity: '💎 限量筛选'
+    story: '📖 故事沉浸', dialogue: '💬 对话剧情', record: '🏆 战绩背书'
   };
 
   // 按批次分组显示
@@ -3172,23 +3559,54 @@ function renderKnowledgeBase() {
     const isBatch = group.length > 1;
     if (isBatch) {
       const firstType = group[0].item.type;
-      const typeEmoji = typeNames[firstType] ? typeNames[firstType].split(' ')[0] : '📝';
-      html += `<div style="font-size:11px;font-weight:600;color:var(--text-tertiary);padding:8px 4px 4px;letter-spacing:0.5px;">
-        ${typeEmoji} 批次导入 · ${group.length} 条
-        <button onclick="deleteBatchItems('${group[0].item.batchId}')" style="margin-left:8px;font-size:10px;border:none;background:none;color:var(--danger);cursor:pointer;opacity:0.7;">删除批次</button>
+      html += `<div style="font-size:11px;font-weight:600;color:var(--text-tertiary);padding:12px 6px 6px;letter-spacing:0.5px;display:flex;justify-content:space-between;align-items:center;">
+        <span>📦 批次导入 · ${group[0].item.batchId.slice(-8)} · ${group.length} 条</span>
+        <button onclick="deleteBatchItems('${group[0].item.batchId}')" style="font-size:10px;border:none;background:none;color:var(--danger);cursor:pointer;opacity:0.7;">删除批次</button>
       </div>`;
     }
     group.forEach(({ item, index }) => {
+      const typeLabel = (typeNames[item.type] || item.type).split(' ')[1] || item.type;
       html += `
-        <div class="kb-item" onclick="previewKbItem('${item.id}')">
-          <div class="kb-type">${typeNames[item.type] || item.type}</div>
-          <div class="kb-text">${escapeHtml(item.text.slice(0, 120))}...</div>
-          <button class="kb-delete" onclick="event.stopPropagation(); deleteKbItem(${index})">✕</button>
+        <div class="kb-doc-item" style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:11px;font-weight:600;color:var(--accent);">${typeLabel}</span>
+            <span style="display:flex;gap:4px;">
+              <button class="kb-doc-delete" onclick="deleteKbItem(${index})" title="删除" style="font-size:14px;border:none;background:none;color:var(--danger);cursor:pointer;padding:0 4px;opacity:0.6;">✕</button>
+            </span>
+          </div>
+          <textarea class="kb-textarea" data-index="${index}" rows="3" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:12px;line-height:1.6;resize:vertical;background:var(--card-bg);color:var(--text-primary);">${escapeHtml(item.text)}</textarea>
+          <div style="font-size:10px;color:var(--text-tertiary);text-align:right;margin-top:2px;">${item.text.replace(/\s/g, '').length}字 · ${new Date(item.timestamp).toLocaleString('zh-CN')}</div>
         </div>`;
     });
   });
 
   kbList.innerHTML = html;
+
+  // 绑定编辑事件
+  kbList.querySelectorAll('.kb-textarea').forEach(textarea => {
+    textarea.addEventListener('blur', function() {
+      const idx = parseInt(this.dataset.index);
+      const newText = this.value.trim();
+      if (newText && newText !== state.knowledgeBase[idx].text) {
+        // 编辑时也检查是否与其他条目重复
+        const dup = state.knowledgeBase.some((item, i) => i !== idx && isDuplicate(newText, item.text));
+        if (dup) {
+          showToast('⚠️ 修改后的内容与知识库中其他条目重复，已恢复原内容');
+          this.value = state.knowledgeBase[idx].text;
+          return;
+        }
+        state.knowledgeBase[idx].text = newText;
+        state.knowledgeBase[idx].extracted = extractPhrasesFromScript(newText);
+        const detectedType = autoDetectType(newText);
+        if (detectedType !== 'news' || detectedType !== state.knowledgeBase[idx].type) {
+          // 不强制覆盖类型，保留用户原始选择
+        }
+        saveData();
+        updateStats();
+        showToast('✅ 已保存修改');
+      }
+    });
+  });
 }
 
 function previewKbItem(id) {
@@ -3341,28 +3759,40 @@ const DEFAULT_SEEDS = [
 ];
 function loadDefaultSeeds() {
   const batchId = 'default-' + Date.now().toString(36);
-  let learnedCount = 0;
-  const typeStats = {};
+  let index = 0;
 
-  DEFAULT_SEEDS.forEach((seed, index) => {
+  // 构建种子列表
+  const seedItems = [];
+  DEFAULT_SEEDS.forEach((seed) => {
     const text = seed.text.trim();
     if (text.replace(/\s/g, '').length < 15) return;
 
-    const detectedType = seed.type;
-    const extracted = extractPhrasesFromScript(text);
-
-    state.knowledgeBase.push({
+    seedItems.push({
       id: batchId + '-' + index,
-      type: detectedType,
+      type: seed.type,
       text: text,
-      extracted: extracted,
+      extracted: extractPhrasesFromScript(text),
       timestamp: new Date().toISOString(),
       isSeed: true,
       batchId: batchId
     });
+    index++;
+  });
 
-    typeStats[detectedType] = (typeStats[detectedType] || 0) + 1;
-    learnedCount++;
+  // 种子内部去重
+  const { deduped: internalDeduped, skipped: internalSkipped } = dedupScripts(seedItems);
+  
+  // 再与已有知识库去重
+  const { deduped, skipped } = dedupScripts(internalDeduped, state.knowledgeBase);
+  const totalSkipped = internalSkipped + skipped;
+
+  // 添加到知识库
+  state.knowledgeBase.push(...deduped);
+
+  // 统计类型
+  const typeStats = {};
+  deduped.forEach(item => {
+    typeStats[item.type] = (typeStats[item.type] || 0) + 1;
   });
 
   localStorage.setItem('script_gen_seeded', '1');
@@ -3374,7 +3804,8 @@ function loadDefaultSeeds() {
   const summary = Object.entries(typeStats)
     .map(([t, c]) => typeNames[t] + '×' + c)
     .join('、');
-  return learnedCount;
+
+  return { count: deduped.length, skipped: totalSkipped, summary };
 }
 
 // ----- 预置种子（已移除按钮，保留代码备用）-----
@@ -3392,32 +3823,36 @@ function addToHistory(script) {
     timestamp: script.timestamp
   });
 
+  state.totalGenerated++;  // 累计生成计数（不受50条上限影响）
   // 保留最近50条
   if (state.history.length > 50) state.history = state.history.slice(0, 50);
   saveData();
   renderHistory();
+  updateStats();
 }
 
 function renderHistory() {
-  const area = document.getElementById('historyArea');
-  const grid = document.getElementById('historyGrid');
+  const body = document.getElementById('rightPanelBody');
 
   if (state.history.length === 0) {
-    area.classList.remove('show');
+    body.innerHTML = '<div class="right-panel-empty">暂未生成稿件</div>';
     return;
   }
 
-  area.classList.add('show');
   const typeNames = {
-    news: '📰', crisis: '⚠️', reverse: '🔄', story: '📖', dialogue: '💬', record: '🏆'
+    news: '📰 新闻突发', crisis: '⚠️ 危机预警', reverse: '🔄 反认知', 
+    story: '📖 故事沉浸', dialogue: '💬 对话剧情', record: '🏆 战绩背书'
   };
 
-  grid.innerHTML = state.history.slice(0, 10).map(h => `
+  body.innerHTML = state.history.map(h => {
+    const time = new Date(h.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    return `
     <div class="history-item" onclick="loadHistoryItem('${h.id}')">
-      <div class="h-type">${typeNames[h.type] || ''} ${h.type}</div>
-      <div class="h-preview">${escapeHtml(h.preview)}...</div>
-    </div>
-  `).join('');
+      <div class="h-type">${typeNames[h.type] || h.type}</div>
+      <div class="h-preview">${escapeHtml(h.preview)}</div>
+      <div class="h-time">${time}</div>
+    </div>`;
+  }).join('');
 }
 
 function loadHistoryItem(id) {
@@ -3445,6 +3880,7 @@ function saveData() {
   try {
     localStorage.setItem('script_gen_kb', JSON.stringify(state.knowledgeBase));
     localStorage.setItem('script_gen_history', JSON.stringify(state.history));
+    localStorage.setItem('script_gen_total', state.totalGenerated);
   } catch (e) {
     // localStorage 满了
     if (state.knowledgeBase.length > 20) {
@@ -3456,6 +3892,7 @@ function saveData() {
     try {
       localStorage.setItem('script_gen_kb', JSON.stringify(state.knowledgeBase));
       localStorage.setItem('script_gen_history', JSON.stringify(state.history));
+      localStorage.setItem('script_gen_total', state.totalGenerated);
     } catch {
       showToast('⚠️ 存储空间不足，部分数据可能丢失');
     }
@@ -3469,16 +3906,21 @@ function loadData() {
 
     const history = localStorage.getItem('script_gen_history');
     if (history) state.history = JSON.parse(history);
+
+    // 恢复累计生成总数（老用户没有这个字段，用 history.length 兜底）
+    const tg = localStorage.getItem('script_gen_total');
+    state.totalGenerated = tg ? parseInt(tg) : state.history.length;
   } catch (e) {
     state.knowledgeBase = [];
     state.history = [];
+    state.totalGenerated = 0;
   }
 }
 
 // ----- 更新统计 -----
 function updateStats() {
   document.getElementById('statTotal').textContent = `${state.knowledgeBase.length} 条`;
-  document.getElementById('statGenerated').textContent = `${state.history.length} 条`;
+  document.getElementById('statGenerated').textContent = `${state.totalGenerated} 条`;
 }
 
 // ----- 键盘快捷键 -----
