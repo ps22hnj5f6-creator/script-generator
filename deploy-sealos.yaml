@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: acr-registry
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJjcnBpLTQwcmZhOWViODBiazd5YzguY24taGFuZ3pob3UucGVyc29uYWwuY3IuYWxpeXVuY3MuY29tIjp7InVzZXJuYW1lIjoiYWxpeXVuMzE4NDQ5NTYyMSIsInBhc3N3b3JkIjoiaXQ5MTEyMDk0ODIiLCJhdXRoIjoiWVd4cGVYVnVNekU0TkRRNU5UWXlNVHBwZFRreE1USXdPVFE0TWc9PSJ9fX0=
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: script-generator
+  labels:
+    app: script-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: script-generator
+  template:
+    metadata:
+      labels:
+        app: script-generator
+    spec:
+      imagePullSecrets:
+        - name: acr-registry
+      containers:
+        - name: script-generator
+          image: crpi-40rfa9eb80bk7yc8.cn-hangzhou.personal.cr.aliyuncs.com/hzduanshipin/script-generator:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: script-generator-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: script-generator
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP

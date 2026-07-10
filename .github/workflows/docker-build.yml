@@ -5,8 +5,8 @@ on:
     branches: [main]
 
 env:
-  DOCKERHUB_USER: kingkong1022
-  DOCKERHUB_IMAGE: kingkong1022/script-generator
+  ACR_REGISTRY: crpi-40rfa9eb80bk7yc8.cn-hangzhou.personal.cr.aliyuncs.com
+  ACR_IMAGE: crpi-40rfa9eb80bk7yc8.cn-hangzhou.personal.cr.aliyuncs.com/hzduanshipin/script-generator
 
 jobs:
   build:
@@ -16,11 +16,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Login to Docker Hub
+      - name: Login to ACR
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ${{ env.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -28,5 +29,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.DOCKERHUB_IMAGE }}:latest
-            ${{ env.DOCKERHUB_IMAGE }}:${{ github.sha }}
+            ${{ env.ACR_IMAGE }}:latest
+            ${{ env.ACR_IMAGE }}:${{ github.sha }}
