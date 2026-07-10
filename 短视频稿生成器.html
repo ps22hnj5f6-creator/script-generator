@@ -747,6 +747,19 @@
     <button class="batch-btn" data-batch="8">8 条</button>
   </div>
 
+  <div class="section-label">🎭 语言风格</div>
+  <div class="batch-row" id="styleRow">
+    <button class="batch-btn active" data-style="aggressive">🔥 激进</button>
+    <button class="batch-btn" data-style="rational">📊 理性</button>
+    <button class="batch-btn" data-style="natural">💬 自然</button>
+  </div>
+
+  <div class="section-label">📏 文案字数</div>
+  <div class="batch-row" id="wordCountRow">
+    <button class="batch-btn" data-words="short">~100字</button>
+    <button class="batch-btn active" data-words="medium">~150字</button>
+    <button class="batch-btn" data-words="long">~220字</button>
+  </div>
 
   <div class="section-label" style="margin-top:4px;">🤖 AI 模型</div>
   <div class="ai-toggle-row">
@@ -784,7 +797,7 @@
   <div class="sidebar-footer">
     <button class="btn-sm" id="btnFeed">📥 投喂爆款稿</button>
     <button class="btn-sm" id="btnKb">📚 知识库</button>
-    <button class="btn-sm" id="btnSeed">🌱 预置种子</button>
+
   </div>
 </aside>
 
@@ -1124,6 +1137,90 @@ const DEFAULT_PHRASES = {
     '信不信由你，来直播间看十分钟',
     '来，进来亲自验证，我怕你不敢来',
   ],
+
+  // ====== 语言风格专用池 ======
+  // 激进风格 — 更紧迫、更情绪化的表达
+  aggressive: {
+    events: [
+      '来不及多说了，刚出的消息', '一分钟前弹窗弹出来的时候',
+      '我刚刚才收到的消息', '今晚必须把这个说清楚',
+      '紧急插播一条', '快看快看，刚出来的',
+      '谁敢信？就刚刚', '还没来得及消化',
+    ],
+    emotions: [
+      '我现在整个人都在颤抖，不是开玩笑',
+      '我连夜从外地赶回来', '吓得我手机差点掉地上',
+      '我不敢相信这是真的', '我激动得早饭都没吃',
+      '这个消息太炸裂了', '这行情谁看了不慌',
+      '我反复确认了三遍', '我整个人都傻眼了',
+    ],
+    negates: [
+      '赶紧清仓！', '听我的，马上出',
+      '一分钟都别犹豫', '现在再不跑就晚了',
+      '高位接盘的醒醒吧', '这些全在出货了',
+    ],
+    ctas: [
+      '马上点头像进直播间，就讲十分钟',
+      '赶紧来，来不及打字了',
+      '快快快，直接进直播间',
+      '别划走！现在就点进来',
+      '手速快的先进直播间',
+    ],
+  },
+
+  // 理性风格 — 更专业、更分析导向
+  rational: {
+    events: [
+      '关注到盘后有一条公开信息', '今天的复盘有几个发现',
+      '综合研报数据来看', '机构最新观点值得注意',
+      '收盘后的数据显示', '近期政策信号比较明确',
+      '产业链调研反馈', '从基本面看',
+    ],
+    emotions: [
+      '值得深入思考', '这个变化让我重新审视',
+      '这是一个比较重要的参考', '有一些细节值得推敲',
+      '客观讲，市场确实在发生变化', '需要理性看待',
+    ],
+    negates: [
+      '目前建议降低对', '可以重新审视',
+      '适当调仓或许是更好的选择', '前期涨幅较大的板块需要注意风险',
+      '风格切换的信号已经出现', '此消彼长是市场常态',
+    ],
+    ctas: [
+      '进直播间我们一起分析', '来直播间我把逻辑拆解给你听',
+      '想听详细的数据分析，来直播间', '点头像，我们慢慢聊',
+      '直播间正在做系统性的分享',
+    ],
+  },
+
+  // 自然风格 — 更口语、像朋友聊天
+  natural: {
+    events: [
+      '哎，今天盘后有个事儿想跟你们说说',
+      '说实话啊，今天复盘的时候发现',
+      '跟你们讲个有意思的',
+      '不知道你们注意到没有',
+      '今天呢，想跟大家聊点实在的',
+      '我刚刚跟几个朋友聊完',
+    ],
+    emotions: [
+      '说实话我挺意外的', '当时我就觉得不对劲',
+      '越想越有意思', '这让我还挺感慨的',
+      '你看啊，这事儿其实不复杂', '我的直觉告诉我',
+    ],
+    negates: [
+      '还盯着那些的，可能要换个思路了',
+      '有些方向确实已经过了',
+      '咱们别跟风追高的', '老朋友都知道我不追涨',
+      '如果现在还重仓那些，建议考虑一下',
+    ],
+    ctas: [
+      '感兴趣的朋友来直播间坐坐', '有空的话点头像来听会儿',
+      '想聊的更细的，直播间等你',
+      '今天直播间挺热闹的，来玩玩',
+      '不忙的话进来看一眼',
+    ],
+  },
 };
 const FORBIDDEN_WORDS = ["史诗级", "分享一只", "如果你还会亏钱的", "不会让你们失望", "逆风翻盘", "推荐一支", "推荐一只", "好股", "免费赠送热门股", "免费赠送优质股", "免费赠送黑马股", "免费送股票池", "免费送股票名单", "免费送热门股", "免费送优质股", "免费送黑马股", "免费赠送股票名单", "免费赠送股票池", "免费赠送股票", "免费赠送3只股", "免费赠送1只股", "免费赠送三只股", "免费赠送一只股", "免费领股", "免费赠送一只股", "免费领股", "得罪全网", "位置非常低", "主力闻风丧胆", "主力都害怕", "仅限", "限制", "仅卖", "仅有", "仅剩", "只卖", "只剩", "数量有限", "限量", "突发消息", "量化炒股", "量化选股", "AI择股", "AI炒股", "AI选股器", "AI选股", "昨天去见了一位游资大佬", "触碰了很多主力机构的利益", "神器", "佣金返现全额", "免费炒股", "零成本交易", "单笔佣金无最低限制", "低至零佣", "佣金全免", "无佣金", "零佣", "免佣", "万一免五", "未被赶超", "没被赶超", "不会让你失望", "今天买明天卖", "只选一只股票", "从未被超越", "每天一只票", "不会让你失望的", "一姐", "一哥", "可能就会复制", "可能复制", "有望复制", "散户怎么才能实现草根逆袭", "我们整个集团大楼", "你的账户可能就完全不一样了", "实现稳健投资", "封杀", "被所有讲股票的人封杀", "被所有讲股票的人举报", "传奇中的传奇", "得罪了所有讲股票的人", "做大", "最快", "最猛", "暂停交易", "偶像", "盈利先锋", "w赚到", "万赚到", "锁定买卖时机", "牛运亨通", "牛气盈天", "牛气满天", "牛转乾坤", "牛转新机", "牛来运转", "扭转乾坤", "牛气冲天", "提高中签率", "打新成功", "预测走势", "大咖精选机会", "大咖分享股票池", "大咖公开股票池", "7x24小时", "最低价", "最准", "最强", "盘前3只股", "免费送股票", "公开上涨名单", "公布上涨名单", "公开短线名单", "美股", "机构消息", "泄露机密", "揭秘", "内幕", "一国两制", "和平统一", "人才强国", "科教兴国", "百花齐放", "百家争鸣", "全面依法治国", "为人民服务", "不忘初心", "美国政策", "中美博弈", "俄乌冲突", "这只票可能会成为下一只", "走不出涨停，我直接退网", "积少成多", "马上暂停交易", "小灶票", "立竿见影", "此票必买", "一飞冲天", "账户节节高", "跟买跟卖", "严格执行", "抢头彩", "不会让您失望的", "您需要赚钱，我需要您的信任", "翻身", "名额仅剩最后", "私募合作", "原价", "0差评", "收益空间", "第一手", "高抛低吸", "内部消息", "消息票", "高管", "吊打", "涨到你怀疑人生", "新王", "所有的资金和游资都在往里面冲", "所有的资金和油资都在往里面冲", "开创了A股的先河", "跟几位财阀聊完", "在股市里面失去的", "从机构回来", "选出合适的股票", "做到快人一步", "接下来很可能直接停牌", "一知名研究所", "六部门联合发布", "大概率是可以跟着主力蹭上一波", "我的持仓成本价都已经是负数", "如果明天这几支票走不出涨停", "你的账户完全不一样了", "想要快速的放大", "跟资本圈同步起跑的时候", "正式的开始把这个股价拉上去", "换了一辆更好的车", "我不建议追了", "选出来的股票更好一些", "股票反着买别墅靠大海", "只做强势，只会做强势", "及时跟上主力节奏", "及时的跟上主力的节奏", "这个会开创了A股的先河", "再不跑真的来不及了", "小资金做成大资金", "点击进入", "机构离职", "机构辞职", "机构回来", "做强势", "合适的股票", "财阀", "韩国宴", "接下来很可能就是直冲云霄", "不建议追了", "可能就要停牌", "账户完全不一样了", "炒股你想赚钱的", "刚刚拒绝了机构私头邀请", "trading agent的项目研究成果", "知名研究院", "持股不超两小时", "规避", "精准", "盆满钵满", "比你们自己选出来的股票更好", "提前退休", "精选个股", "国际巨鳄", "多个投资机构邀请他加入", "抄底", "回锅", "退役", "操盘手", "私募", "回国", "华尔街", "头部", "魁首", "屎难吃", "冠军", "连续一字板", "一年时间能做到3000%", "从1w做到100w", "从1万做到100万", "挑战用30天时间", "想要的股票", "提前布局", "提前埋伏", "突发利空", "突发利好", "准确", "做到100万", "扯淡", "验证", "能做到3000%", "1000元如何滚成50万", "1000元如何滚成50W", "1W做到100W", "1万做到100万", "一个w", "1个w", "十个w", "10个w", "千本金", "0000本金", "000本金", "领先", "万能", "顶级", "吃口肉", "吃肉", "最后一次", "白嫖", "开挂", "百万", "吃上", "全网都", "回本", "大跌", "庄家", "0成本", "割肉", "满仓", "白嫖", "领股", "量化已经淘汰了", "不需要购买任何的炒股软件", "错过就无", "未曾有过的", "限时", "贸易战", "超跌", "极致", "收益能最大化", "首次", "暴涨", "收入不到", "超越身边", "开大会", "重磅会议", "重要会议", "牛市", "必看 瞧不起你", "很久才同意开放", "权色", "领军", "TOP1", "赚到100万", "实名呼吁", "出台", "套利", "最火", "高收益", "绝佳", "必学", "免税", "sM性", "双开", "当日盈亏", "Sora", "免费送", "数字货币", "牛逼", "最好", "今日盈亏", "内参", "零成本", "首发", "涨停", "挣得比老公多", "提前上车", "换了车", "别墅挨大海", "翻身", "跨越了阶层", "如果你一年的收入不到20W", "铺捉涨停板", "随时爆发", "准确率高达", "AI能够通过大数据算出哪些是主力正在吸收的，等到主力吸引完毕，就会正式开始把股价向上拉", "选择下车即可", "找到大资金看好的股票，让你在早上提前买，早上筹码便宜，随便买都行，但是等到下午大资金进场，抱歉，抢都抢不到了", "操盘", "开盘就封板的股票，高手教我怎么上车", "跨年妖股", "这样风险小", "赚的钱让我大吃一惊", "赚的轻松", "牛股", "直接退休", "守护你的财富安全", "有效规避风险", "能赚钱", "稳操胜券", "稳稳抓住黑马股", "可能让你少打十年工", "相信不会让你失望的", "安全性是很高的", "稳稳躺赢", "能在涨停板上轻松卖出", "即将爆发", "会爆发的股票", "会爆发的主升浪股票", "A类投资咨询机构", "私募合作不实内容", "对冲拉盘", "机构合作票", "购买内幕消息", "自营盘", "年化收益", "固定回报", "高收益回报", "快速回报", "无风险回报", "保本稳赚", "承诺保底", "返本销售", "保底收益", "包回报", "收益率", "特供等借国家", "机关专供", "领导人推荐", "机关推荐", "售罄", "售空", "再不抢就没了", "史上最低价", "没有他就", "错过即无", "卖疯了", "抢疯了", "全民抢购", "全民疯抢", "领取礼品", "点击翻转", "点击试穿", "点击有惊喜", "全民免单", "恭喜获奖", "点击领奖", "纯天然", "无敌", "特效", "祖传", "永久", "前无古人", "王者", "领袖", "巅峰", "至尊", "掌门人", "著名", "巨星", "领先上市", "创领品牌", "缔造者", "王牌", "领袖品牌", "世界领先", "遥遥领先", "随时涨价", "随时结束", "填补国内空白", "国际品质", "中国驰名商标", "国家领导人", "国家级产品", "全国销量冠军", "全国首发", "独家配方", "首选", "独家", "绝佳", "绝对", "极佳", "极品", "尖端", "顶尖", "世界级", "宇宙级", "国家级", "全球级", "一对一", "一次性收费", "一次性付费", "劲爆强势票", "压轴票", "好票", "任何费用", "分析师", "荐股", "知买知卖", "监管", "龙头股", "抄开门红", "老师的服务不会让你失望的", "不会上当的", "我需要您的一份信任", "您需要赚钱", "名额仅剩下最后", "解套", "零差评", "无一失手", "一票赚回服务费", "获利", "大妖", "妖股", "大牛", "金股", "机会空间", "准确率", "胜率", "成功率", "实盘验证"];
 
@@ -1234,6 +1331,10 @@ const DEEPSEEK_CONFIG = {
   temperature: 0.85
 };
 
+// ----- 语言风格与字数配置 -----
+state.languageStyle = 'aggressive';  // 'aggressive' | 'rational' | 'natural'
+state.wordCount = 'medium';           // 'short' | 'medium' | 'long'
+
 // ----- AI 模式状态 -----
 state.aiMode = 'template';  // 'template' | 'deepseek'
 state.aiModel = 'deepseek-chat';
@@ -1269,30 +1370,128 @@ function pickRandomSeed(type) {
   return DEFAULT_SEEDS[Math.floor(Math.random() * DEFAULT_SEEDS.length)].text;
 }
 
-function buildDeepSeekPrompt(type, seedText) {
-  const systemPrompt = `你是一个资深财经分析师，从业十二年，对市场有独立的判断。你现在要用口语化的方式讲清楚一个观点，目的是引导观众进直播间听你深入分析。
+function buildDeepSeekPrompt(type, seedText, languageStyle = 'aggressive', wordCount = 'medium') {
+  // 字数范围
+  const charRange = WORD_COUNT_CONFIG[wordCount]?.targetChars || 150;
+  const charMin = Math.floor(charRange * 0.7);
+  const charMax = Math.ceil(charRange * 1.3);
+  
+  // ========== 自媒体爆款范例（Few-shot 锚定语感） ==========
+  const fewShotExamples = `## 爆款范例（你必须模仿这种语气、节奏、用词）
 
-你的表达原则：
-- 专业但不端着。用自然的短句说话，像面对面跟你讲一个你该知道的事情。
-- 语气是笃定的、有洞察的。你知道别人不知道的东西，但你不需要大声喊。
-- 不堆砌形容词，不喊口号。用事实感和判断力来建立信任。
-- 结尾自然地过渡到"进直播间细聊"，不推销，是给你看更多。
+范例1（新闻突发型）：
+"突发！今天盘后出了一个消息，很多散户还没看到。就四个字——电力改革。半导体那边，芯片、光模块已经高位横了半个月了，主力在出货你看不出来吗？但电力这边，资金在悄悄进场。我今晚八点在直播间把逻辑拆给你看，别错过。"
 
-禁止：
-- 不出现暴涨、翻倍、翻番、必涨、稳赚、免费送股、推荐
-- 不出现具体板块名或股票代码，用"一个方向""一条主线"代替
-- 不列点、不分段，一气呵成
-- 不用"嘛""呀""呗""啊"这类拖尾语气词——你是专业人士，不是市井聊天`;
+范例2（反认知型）：
+"别再看消费电子和PCB了，这两个方向上一波已经炒完了。现在有一条暗线，很多人根本没注意到——电力。注意我用的词，是信号，不是让你无脑追。今晚来直播间，我给你看资金流向的数据，看完你就知道为什么我在这个时候说这个。"
 
-  const userPrompt = `参考下面这条稿子的结构和节奏，用你自己的判断重新组织语言写一条。保持同样的信息密度，但表达可以更干练、更有说服力。
+范例3（故事沉浸型）：
+"刚加完班，翻了翻今天的龙虎榜，发现一个有意思的事。半导体芯片那边净流出已经持续第四天了，但是电力板块，连续三天上榜。说实话，这种信号一年也就出现三四次。晚上来直播间坐坐，我把逻辑讲透。"
+
+**你必须模仿的关键特征**：
+- 开头极短，1-3句话切入，不铺垫
+- 每句话不超过20字，大部分5-15字
+- 直面观众："你不知道""你看不出来吗""听懂了没有"
+- 用分段和空行制造节奏感，一条稿子至少分3-4个自然段`;
+
+  // ========== 反向约束：禁止书面词 → 自媒体替换 ==========
+  const forbiddenWordsTable = `## 禁止使用的书面词（违者重写）
+
+以下词是自媒体稿的毒药，绝对不能出现。用右边代替：
+| 书面词（禁止） | 替换为 |
+|---|---|
+| 投资者 | 你 / 散户 / 很多人 |
+| 建议 | 听我的 / 我告诉你 / 你看 |
+| 进行 | 搞 / 干 / 做 |
+| 上行动能 | 还能涨 / 还在冲 |
+| 下行压力 | 扛不住了 / 在跌 |
+| 重新审视 | 换个思路 / 别看了 |
+| 显著 | 很明显 / 太 |
+| 予以关注 | 看过来 / 注意 |
+| 呈现XX态势 | XX了 / XX在发生 |
+| 估值偏高/偏低 | 贵了 / 便宜 |
+| 应当/需/可 | 要 / 得`;
+
+  // ========== 分层提示：否定点名 vs 新机会模糊 ==========
+  const layeredRule = `## 板块提及的黄金法则
+
+否定旧板块 → 必须点名：
+- "半导体、芯片已经炒不动了"
+- "别看消费电子和PCB了"
+- "光伏这波差不多了"
+
+暗示新机会 → 只用模糊表达：
+- ✅ "有一个方向资金在悄悄进场"
+- ✅ "注意一条暗线"
+- ✅ "有一个信号被很多人忽略了"
+- ✅ "我正在盯着一个板块"
+- ✅ "这条主线正在形成"
+
+❌ 绝对不能在暗示新机会时说具体板块名！不要把"电力""机器人"放在机会暗示的位置！`;
+
+  // 风格指令（保持原有动态拼接）
+  const styleInstructions = {
+    aggressive: `语气风格（激进紧迫型）：
+- 节奏快、句子短，每句10-15字，不超过20字
+- 用感叹号和反问增强紧迫感（但不过度）
+- 情绪饱满但真实，像真正被市场消息震撼到的分析师
+- 否定果断、不留余地："别看XX了""XX已经结束了""赶紧换方向"
+- CTA干脆直接："马上进直播间""就讲十分钟""别等了"`,
+
+    rational: `语气风格（理性分析型）：
+- 句子清晰有力，每句12-25字
+- 用数据和逻辑说话，不煽情不恐吓
+- 像专业研究报告的口语版——有依据、有判断、有建议
+- 否定要讲原因："XX板块资金已持续流出""从基本面看，XX估值偏高"
+- CTA邀请但不强迫："进直播间我把逻辑拆解给你听""一起来分析"`,
+
+    natural: `语气风格（自然邀约型）：
+- 像跟老朋友聊天一样自然，不用专业术语堆砌
+- 必须用"说实话""你看""咱们""我跟你说"这类口语词
+- 不要太激烈，像茶余饭后分享一个观察
+- 否定要温和但清晰："XX方向确实不太适合现在看了""咱们换个思路"
+- CTA友好自然："感兴趣可以来直播间坐坐""有空的话进来聊会儿"`
+  };
+
+  const styleGuide = styleInstructions[languageStyle] || styleInstructions.aggressive;
+
+  const typeGuides = {
+    news: '以一段突发新闻/盘后消息开篇，制造"别人还不知道"的信息差',
+    crisis: '以风险警告开篇，点名具体板块的风险，再暗示新方向',
+    reverse: '先否定当前热门板块（点名），再揭示被忽视的新方向（不点名）',
+    story: '用个人化的真实场景（加班/回公司/复盘）开篇，自然过渡到观点',
+    dialogue: '用双人对话形式开篇，通过对话引出方向建议',
+    record: '用过往战绩证明实力，然后引出新的关注方向'
+  };
+
+  const systemPrompt = `你是资深财经短视频博主，你的稿子发出去就是爆款。你不是写稿机器，你是真的在市场里泡了十几年的人。
+
+${fewShotExamples}
+
+${forbiddenWordsTable}
+
+${layeredRule}
+
+${styleGuide}
+
+稿件类型：${typeGuides[type] || typeGuides.news}
+
+## 核心原则（一句话记住）：
+否定旧的要具体（点名），暗示新的要模糊（只说方向/信号/暗线）。
+写出来的稿子要有"人在跟你说话"的感觉，不是"机器在播报新闻"。`;
+
+  const userPrompt = `参考下面这条稿子的核心信息和观点方向，完全用全新的语言重写一条。句式、节奏、用词全换，但核心信息保留。
 
 ## 参考稿：
 ${seedText}
 
 ## 要求：
-- 100到200字
-- 口语但不随意，笃定但不张扬
-- 直接输出，不要加标题、编号、解释`;
+- ${charMin}到${charMax}字
+- 用自然段分隔，至少分3段（每段之间用空行）
+- 否定旧板块时点名2-3个具体板块名
+- 暗示新机会时绝不说具体板块名，只能说"一个方向""一个信号""一条暗线"
+- 直接输出，不要加任何标题、编号、说明文字
+- 结构不要按固定模板来，每条的段落节奏要不同`;
 
   return { system: systemPrompt, user: userPrompt };
 }
@@ -1373,17 +1572,21 @@ async function callDeepSeekAPI(systemPrompt, userPrompt) {
   return text.trim();
 }
 
-// DeepSeek 模式下的生成流程：随机挑一条种子稿，仿写
+// DeepSeek 模式下的生成流程：先用模板生成一条稿子，再让 DeepSeek 仿写润色
 async function generateWithDeepSeek(type) {
   // 先用模板生成一条稿子，再让 DeepSeek 仿写润色
-  const templateScript = generateScriptRaw(type);
+  const templateScript = generateScriptRaw(type, state.languageStyle, state.wordCount);
   const seedText = templateScript.full;
-  const { system: systemPrompt, user: userPrompt } = buildDeepSeekPrompt(type, seedText);
+  const { system: systemPrompt, user: userPrompt } = buildDeepSeekPrompt(type, seedText, state.languageStyle, state.wordCount);
   const text = await callDeepSeekAPI(systemPrompt, userPrompt);
   
   // 禁词过滤
   const hasFW = hasForbiddenWord(text);
-  const cleanText = hasFW ? censorScriptRaw(text) : text;
+  let cleanText = hasFW ? censorScriptRaw(text) : text;
+  
+  // ===== 后处理安全网：模糊化新机会中的板块名 =====
+  cleanText = fuzzyOpportunityPlateNames(cleanText);
+  
   const remainingFW = hasForbiddenWord(cleanText);
   
   // 构建结果对象
@@ -1416,6 +1619,104 @@ function censorScriptRaw(text) {
   return text;
 }
 
+// ===== 后处理安全网：将 AI 输出中新机会部分的板块名模糊化 =====
+// 原理：找到否定句边界（最后一个"别看/忘掉/结束了"等否定词出现的位置），
+// 否定句中允许保留板块名，边界之后的板块名全部替换为模糊表达。
+function fuzzyOpportunityPlateNames(text) {
+  // 常见板块名（用于扫描，按长度降序避免部分匹配）
+  const plateNames = [
+    '新能源车', '无人驾驶', '数字经济', '数据要素', '消费电子', '人工智能',
+    '半导体', '芯片', 'PCB', '光模块', '光伏', '电力', '机器人',
+    '新能源', '军工', '医药', '白酒', '银行', '券商', 'AI',
+    '锂电', '储能', '算力', '汽车', '地产', '煤炭', '钢铁',
+    '有色', '通信', '传媒', '游戏', '保险', '家电', '农业', '化工',
+    '电解液', '稀土', '风电', '氢能'
+  ];
+  
+  // 否定关键词：出现这些词的位置视为"在否定旧板块"，允许保留板块名
+  const negateMarkers = [
+    '炒不动了', '过去了', '差不多了', '该撤了', '该换了',
+    '别看', '忘掉', '忘了', '结束了', '炒完了', '别碰', '别跟', '别追',
+    '炒不动', '不看了', '别盯着', '换方向', '到头了', '分化了', '走完了',
+    '别再看', '不要看', '不用看', '别管', '不要碰', '别跟了', '该走了'
+  ];
+  
+  // 模糊替换目标池
+  const fuzzyReplacements = ['这个方向', '一条暗线', '一个信号', '这条主线', '一个板块', '这个领域', '这个赛道'];
+  
+  // Step 1: 找到最后一个否定标记的位置（否定边界）
+  let negateBoundary = -1;
+  for (const marker of negateMarkers) {
+    const idx = text.lastIndexOf(marker);
+    if (idx > negateBoundary) {
+      negateBoundary = idx + marker.length; // 边界设在否定词之后
+    }
+  }
+  
+  // 如果文中有转折词出现在否定边界附近或之后，将边界移到转折词之前
+  // 因为转折词通常引入"新机会暗示"
+  const opportunityMarkers = ['但', '不过', '然而', '反而', '倒是', '其实', '注意'];
+  for (const marker of opportunityMarkers) {
+    const idx = text.indexOf(marker, negateBoundary > 0 ? negateBoundary : 0);
+    if (idx >= 0 && (negateBoundary < 0 || idx >= negateBoundary - 5)) {
+      negateBoundary = Math.max(negateBoundary, idx);
+    }
+  }
+  
+  // 如果没有找到否定边界，全文扫描：只替换最后一个板块名
+  if (negateBoundary < 0) {
+    let result = text;
+    let replaced = false;
+    for (const name of plateNames) {
+      if (!replaced && result.includes(name)) {
+        const replacement = fuzzyReplacements[Math.floor(Math.random() * fuzzyReplacements.length)];
+        // 使用正则精确替换（支持后面跟"板块"等后缀的情况）
+        const regex = new RegExp(name + '(板块)?', 'g');
+        // 只替换最后一个匹配
+        const matches = [...result.matchAll(regex)];
+        if (matches.length > 0) {
+          const last = matches[matches.length - 1];
+          result = result.substring(0, last.index) + replacement + result.substring(last.index + last[0].length);
+          replaced = true;
+        }
+      }
+    }
+    return result;
+  }
+  
+  // Step 2: 在否定边界之后，扫描并替换所有板块名
+  const before = text.substring(0, negateBoundary);
+  let after = text.substring(negateBoundary);
+  
+  const usedReplacements = new Set();
+  
+  for (const name of plateNames) {
+    // 构建正则：板块名 + 可选后缀"板块/方向/概念"
+    const regex = new RegExp(name + '(板块|方向|概念|行业)?', 'g');
+    let match;
+    const positions = [];
+    while ((match = regex.exec(after)) !== null) {
+      positions.push({ start: match.index, end: match.index + match[0].length, full: match[0] });
+    }
+    
+    // 从后往前替换，避免索引偏移
+    for (const pos of positions.reverse()) {
+      const available = fuzzyReplacements.filter(r => !usedReplacements.has(r));
+      const replacement = available.length > 0 
+        ? available[Math.floor(Math.random() * available.length)]
+        : fuzzyReplacements[Math.floor(Math.random() * fuzzyReplacements.length)];
+      usedReplacements.add(replacement);
+      
+      after = after.substring(0, pos.start) + replacement + after.substring(pos.end);
+    }
+    
+    // 重置 regex（因为 after 已变）
+    regex.lastIndex = 0;
+  }
+  
+  return before + after;
+}
+
 
 // ----- 禁词检测与过滤 -----
 function hasForbiddenWord(text) {
@@ -1430,7 +1731,7 @@ function censorScript(script, maxRetries = 8) {
   for (let i = 0; i < maxRetries; i++) {
     const found = hasForbiddenWord(script.full);
     if (!found) return { script, clean: true, retries: i };
-    script = generateScriptRaw(script.type);
+    script = generateScriptRaw(script.type, script.languageStyle || 'aggressive', script.wordCount || 'medium');
   }
   const found = hasForbiddenWord(script.full);
   return { script, clean: !found, retries: maxRetries, dirtyWord: found };
@@ -1805,6 +2106,37 @@ function genNews(pool, cfg) {
       let full = `${event}。${negate}。${infoGap}。${benefit}。${cta}`;
       return full;
     },
+    // 模板E：直接上结论 → 信息差 → CTA（最短，适合短字数）
+    () => {
+      const infoGap = buildInfoGapSentence(pool);
+      const newDir = buildNewDirection(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${infoGap}。${newDir}。${cta}`;
+      return full;
+    },
+    // 模板F：身份前置 → 事件 → 信息差 → CTA（专业感）
+    () => {
+      const identity = pickIdentity(pool);
+      const event = pick2(pool.eventPhrases);
+      const infoGap = buildInfoGapSentence(pool);
+      const benefit = buildBenefitSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `我们${identity}，${event}。${infoGap}。${benefit}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const negate = buildNegateSentence(pool);
+        full = full.replace('。' + infoGap, '。' + negate + '。' + infoGap);
+      }
+      return full;
+    },
+    // 模板G：事件 → 利益暗示 → CTA（简单直接）
+    () => {
+      const event = pick2(pool.hookNews || pool.eventPhrases);
+      const benefit = buildBenefitSentence(pool);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${event}。${benefit}。${infoGap}。${cta}`;
+      return full;
+    },
   ];
   const tpl = pick2(templates);
   const full = tpl();
@@ -1846,6 +2178,40 @@ function genCrisis(pool, cfg) {
       if (cfg.extraSections >= 1) {
         const newHint = pick2(pool.suspensePhrases);
         full = full.replace(cta, newHint + '。' + cta);
+      }
+      return full;
+    },
+    // 模板D：风险先 → 原因分析 → CTA
+    () => {
+      const riskDetail = buildRiskDetail(pool);
+      const infoGap = buildInfoGapSentence(pool);
+      const newHint = buildNewDirection(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${riskDetail}。${infoGap}。${newHint}，${cta}`;
+      if (cfg.extraSections >= 1) {
+        const warning = pick2(pool.crisisWarning);
+        full = warning + '。' + full;
+      }
+      return full;
+    },
+    // 模板E：简洁警告型
+    () => {
+      const warning = pick2(pool.crisisWarning);
+      const negate = pick2(pool.negatePhrases);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${warning}。${negate}。${cta}`;
+      return full;
+    },
+    // 模板F：方向转换型
+    () => {
+      const riskDetail = buildRiskDetail(pool);
+      const newHint = buildNewDirection(pool);
+      const benefit = buildBenefitSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${riskDetail}。${newHint}。${benefit}。${cta}`;
+      if (cfg.extraSections >= 2) {
+        const warning = pick2(pool.crisisWarning);
+        full = warning + '。' + full;
       }
       return full;
     },
@@ -1894,6 +2260,40 @@ function genReverse(pool, cfg) {
       }
       return full;
     },
+    // 模板D：事件开篇 → 否定 → 新方向 → CTA
+    () => {
+      const event = pick2(pool.eventPhrases);
+      const negate = buildNegateSentence(pool);
+      const newDir = buildNewDirection(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${event}。${negate}。${newDir}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const infoGap = buildInfoGapSentence(pool);
+        full = full.replace(newDir + '。', newDir + '。' + infoGap + '。');
+      }
+      return full;
+    },
+    // 模板E：直接断言 → 否定 → CTA（短小有力）
+    () => {
+      const negate = buildNegateSentence(pool);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${negate}。${infoGap}。${cta}`;
+      return full;
+    },
+    // 模板F：先给方向 → 再说不要什么
+    () => {
+      const newDir = buildNewDirection(pool);
+      const negate = buildNegateLight(pool);
+      const benefit = buildBenefitSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${newDir}。${negate}。${benefit}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const extraGap = pick2(pool.infoGapPhrases);
+        full = full.replace(benefit + '。', extraGap + '。' + benefit + '。');
+      }
+      return full;
+    },
   ];
   const tpl = pick2(templates);
   const full = tpl();
@@ -1937,6 +2337,36 @@ function genStory(pool, cfg) {
         const benefit = buildBenefitSentence(pool);
         full = full.replace(cta, benefit + '。' + cta);
       }
+      return full;
+    },
+    // 模板D：场景 → 信息差 → CTA（最简叙事）
+    () => {
+      const scene = pick2(pool.storyScene);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${scene}。${infoGap}。${cta}`;
+      return full;
+    },
+    // 模板E：先抛结论 → 场景回溯 → CTA
+    () => {
+      const infoGap = buildInfoGapSentence(pool);
+      const scene = pick2(pool.storyScene);
+      const discovery = pick2(pool.storyDiscovery);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${infoGap}。${scene}，${discovery}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const benefit = buildBenefitSentence(pool);
+        full = full.replace(cta, benefit + '。' + cta);
+      }
+      return full;
+    },
+    // 模板F：情绪开场 → 发现 → CTA
+    () => {
+      const emotion = pick2(pool.emotionPhrases);
+      const discovery = pick2(pool.storyDiscovery);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.ctaPhrases);
+      let full = `${emotion}，${discovery}。${infoGap}。${cta}`;
       return full;
     },
   ];
@@ -1987,6 +2417,39 @@ function genRecord(pool, cfg) {
       }
       return full;
     },
+    // 模板D：直接挑战 → 战绩 → CTA
+    () => {
+      const proof = pick2(pool.recordProof);
+      const cta = pick2(pool.challengeCta);
+      let full = `${proof}。${cta}`;
+      if (cfg.extraSections >= 1) {
+        const newHint = buildNewDirection(pool);
+        full = full.replace(cta, newHint + '。' + cta);
+      }
+      return full;
+    },
+    // 模板E：先翻篇 → 新方向 → CTA
+    () => {
+      const transition = pick2(pool.recordTransition);
+      const newHint = buildNewDirection(pool);
+      const benefit = buildBenefitSentence(pool);
+      const cta = pick2(pool.challengeCta);
+      let full = `${transition}。${newHint}。${benefit}。${cta}`;
+      return full;
+    },
+    // 模板F：战绩 + 情绪 → 新方向 → CTA
+    () => {
+      const proof = pick2(pool.recordProof);
+      const newHint = buildNewDirection(pool);
+      const infoGap = buildInfoGapSentence(pool);
+      const cta = pick2(pool.challengeCta);
+      let full = `${proof}。${newHint}。${infoGap}。${cta}`;
+      if (cfg.extraSections >= 2) {
+        const transition = pick2(pool.recordTransition);
+        full = full.replace(newHint, transition + '。' + newHint);
+      }
+      return full;
+    },
   ];
   const tpl = pick2(templates);
   const full = tpl();
@@ -2014,12 +2477,35 @@ function getMonthlyHotSectors() {
   return sectorCycle[prevMonth];
 }
 
+// ====== 字数配置映射 ======
+const WORD_COUNT_CONFIG = {
+  short:  { extraSections: 0, targetChars: 100, label: '~100字' },
+  medium: { extraSections: 1, targetChars: 150, label: '~150字' },
+  long:   { extraSections: 2, targetChars: 220, label: '~220字' },
+};
+
+// ====== 语言风格应用到短语池 ======
+function applyStyleToPool(pool, style) {
+  if (!pool[style]) return; // 没有对应风格池则跳过
+  
+  const sp = pool[style];
+  // 用风格专用内容替换/补充通用池
+  if (sp.events?.length)    pool.eventPhrases    = [...new Set([...sp.events, ...pool.eventPhrases])];
+  if (sp.emotions?.length)  pool.emotionPhrases  = [...new Set([...sp.emotions, ...pool.emotionPhrases])];
+  if (sp.negates?.length)   pool.negatePhrases   = [...new Set([...sp.negates, ...pool.negatePhrases])];
+  if (sp.ctas?.length)      pool.ctaPhrases      = [...new Set([...sp.ctas, ...pool.ctaPhrases])];
+}
+
 // ====== 统一分发（原始生成，不含禁词过滤）======
-function generateScriptRaw(type) {
+function generateScriptRaw(type, languageStyle = 'aggressive', wordCount = 'medium') {
   const pool = buildPhrasePool();
   // 否定目标使用上月市场表现好的板块
   pool.negateTargetList = getMonthlyHotSectors();
-  const cfg = { extraSections: 1 };
+  // 应用语言风格
+  applyStyleToPool(pool, languageStyle);
+  
+  const wcConfig = WORD_COUNT_CONFIG[wordCount] || WORD_COUNT_CONFIG.medium;
+  const cfg = { extraSections: wcConfig.extraSections, languageStyle, wordCount };
   
   let result;
   switch (type) {
@@ -2040,6 +2526,8 @@ function generateScriptRaw(type) {
     structure: result.structure,
     type,
     charCount,
+    languageStyle,
+    wordCount,
     timestamp: new Date().toISOString(),
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
   };
@@ -2047,7 +2535,7 @@ function generateScriptRaw(type) {
 
 // ====== 带禁词过滤的生成（UI调用的入口）======
 function generateScript(type) {
-  const script = generateScriptRaw(type);
+  const script = generateScriptRaw(type, state.languageStyle, state.wordCount);
   return censorScript(script);
 }
 
@@ -2125,6 +2613,21 @@ document.getElementById('proxyToggle').addEventListener('change', (e) => {
       state.useProxy = savedProxy !== '0';
       document.getElementById('proxyToggle').checked = state.useProxy;
     }
+    // 恢复语言风格和字数设置
+    const savedStyle = localStorage.getItem('script_gen_style');
+    if (savedStyle) {
+      state.languageStyle = savedStyle;
+      document.querySelectorAll('#styleRow .batch-btn').forEach(b => b.classList.remove('active'));
+      const styleBtn = document.querySelector('#styleRow .batch-btn[data-style="' + savedStyle + '"]');
+      if (styleBtn) styleBtn.classList.add('active');
+    }
+    const savedWords = localStorage.getItem('script_gen_words');
+    if (savedWords) {
+      state.wordCount = savedWords;
+      document.querySelectorAll('#wordCountRow .batch-btn').forEach(b => b.classList.remove('active'));
+      const wordsBtn = document.querySelector('#wordCountRow .batch-btn[data-words="' + savedWords + '"]');
+      if (wordsBtn) wordsBtn.classList.add('active');
+    }
   } catch {}
 })();
 
@@ -2132,9 +2635,29 @@ document.getElementById('proxyToggle').addEventListener('change', (e) => {
 document.getElementById('batchRow').addEventListener('click', (e) => {
   const btn = e.target.closest('.batch-btn');
   if (!btn) return;
-  document.querySelectorAll('.batch-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#batchRow .batch-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   state.batchCount = parseInt(btn.dataset.batch);
+});
+
+// ----- 语言风格选择 -----
+document.getElementById('styleRow').addEventListener('click', (e) => {
+  const btn = e.target.closest('.batch-btn');
+  if (!btn) return;
+  document.querySelectorAll('#styleRow .batch-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.languageStyle = btn.dataset.style;
+  try { localStorage.setItem('script_gen_style', btn.dataset.style); } catch {}
+});
+
+// ----- 文案字数选择 -----
+document.getElementById('wordCountRow').addEventListener('click', (e) => {
+  const btn = e.target.closest('.batch-btn');
+  if (!btn) return;
+  document.querySelectorAll('#wordCountRow .batch-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.wordCount = btn.dataset.words;
+  try { localStorage.setItem('script_gen_words', btn.dataset.words); } catch {}
 });
 
 // ----- 工具栏更新 -----
@@ -2854,16 +3377,7 @@ function loadDefaultSeeds() {
   return learnedCount;
 }
 
-document.getElementById('btnSeed').addEventListener('click', () => {
-  if (state.knowledgeBase.length > 0) {
-    if (!confirm('知识库已有数据，预置种子会追加而不会覆盖。继续？')) return;
-  }
-
-  const learnedCount = loadDefaultSeeds();
-  showToast('🌱 种子注入完成：' + learnedCount + ' 条');
-});
-
-// ----- 清空（已移除按钮，保留代码备用）-----
+// ----- 预置种子（已移除按钮，保留代码备用）-----
 
 // ============================================================
 // 历史记录
