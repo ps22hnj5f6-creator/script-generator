@@ -116,9 +116,9 @@ const server = http.createServer(async (req, res) => {
   return serveStatic(req, res);
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log('🚀 短视频引流稿生成器已上线');
-  console.log('   本地访问: http://localhost:' + PORT);
+  console.log('   监听地址: http://0.0.0.0:' + PORT);
   console.log('   模板模式: 直接使用');
   console.log('   AI 模式:  输入 DeepSeek API Key 后使用（已内置代理，无需额外启动）');
   console.log('   按 Ctrl+C 停止');

@@ -743,14 +743,14 @@
   <div class="section-label">生成数量</div>
   <div class="batch-row" id="batchRow">
     <button class="batch-btn active" data-batch="1">1 条</button>
-    <button class="batch-btn" data-batch="3">3 条</button>
-    <button class="batch-btn" data-batch="5">5 条</button>
+    <button class="batch-btn" data-batch="4">4 条</button>
+    <button class="batch-btn" data-batch="8">8 条</button>
   </div>
 
 
   <div class="section-label" style="margin-top:4px;">🤖 AI 模型</div>
   <div class="ai-toggle-row">
-    <button class="ai-mode-btn active" data-mode="template" id="modeTemplate">📋 模板</button>
+    <button class="ai-mode-btn active" data-mode="template" id="modeTemplate">📋 本地</button>
     <button class="ai-mode-btn" data-mode="deepseek" id="modeDeepseek">🧠 AI</button>
   </div>
   <div class="ai-config" id="aiConfig" style="display:none;">
@@ -785,7 +785,6 @@
     <button class="btn-sm" id="btnFeed">📥 投喂爆款稿</button>
     <button class="btn-sm" id="btnKb">📚 知识库</button>
     <button class="btn-sm" id="btnSeed">🌱 预置种子</button>
-    <button class="btn-sm danger" id="btnClear">清空数据</button>
   </div>
 </aside>
 
@@ -2368,7 +2367,7 @@ document.getElementById('btnGenerate').addEventListener('click', async () => {
         '<div class="icon">⚠️</div>' +
         '<p>生成过程中出现错误</p>' +
         '<p style="font-size:12px;margin-top:8px;color:var(--danger);">' + escapeHtml(err.message) + '</p>' +
-        '<p style="font-size:12px;margin-top:12px;color:var(--text-tertiary);">请检查知识库是否正常加载，或切换到模板模式</p>';
+        '<p style="font-size:12px;margin-top:12px;color:var(--text-tertiary);">请检查知识库是否正常加载，或切换到本地模式</p>';
       showToast('❌ 生成失败: ' + err.message);
     } finally {
       btn.textContent = isAI ? '🧠 AI 生成引流稿' : '✨ 生成引流稿';
@@ -2864,33 +2863,7 @@ document.getElementById('btnSeed').addEventListener('click', () => {
   showToast('🌱 种子注入完成：' + learnedCount + ' 条');
 });
 
-// ----- 清空 -----
-document.getElementById('btnClear').addEventListener('click', () => {
-  if (confirm('⚠️ 确定要清空所有知识库和生成历史吗？此操作不可恢复。')) {
-    state.knowledgeBase = [];
-    state.history = [];
-    state.currentScripts = [];
-    localStorage.removeItem('script_gen_seeded');
-    saveData();
-
-    // 清空显示
-    document.getElementById('scriptEmpty').style.display = '';
-    document.getElementById('scriptEmpty').innerHTML =
-      '<div class="icon">✍️</div>' +
-      '<p>选择类型和数量<br>点击「生成引流稿」开始创作</p>' +
-      '<p style="font-size:12px;margin-top:8px;color:var(--text-tertiary);">投喂你的爆款稿件可以让生成更精准</p>';
-    document.getElementById('scriptLoading').style.display = 'none';
-    document.getElementById('scriptResults').style.display = 'none';
-    document.getElementById('scriptResults').innerHTML = '';
-    document.getElementById('btnCopy').disabled = true;
-    document.getElementById('btnRegenerate').disabled = true;
-    document.getElementById('historyArea').classList.remove('show');
-    document.getElementById('historyGrid').innerHTML = '';
-
-    updateStats();
-    showToast('🗑 所有数据已清空');
-  }
-});
+// ----- 清空（已移除按钮，保留代码备用）-----
 
 // ============================================================
 // 历史记录
