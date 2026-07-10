@@ -5,7 +5,8 @@ on:
     branches: [main]
 
 env:
-  REGISTRY: ghcr.io
+  ACR_REGISTRY: crpi-40rfa9eb80bk7yc8.cn-hangzhou.personal.cr.aliyuncs.com
+  ACR_IMAGE: hzduanshipin/script-generator
 
 jobs:
   build:
@@ -18,12 +19,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Login to GitHub Container Registry
+      - name: Login to Alibaba Cloud ACR
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -31,15 +32,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}:latest
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.sha }}
-
-      - name: Make package public
-        run: |
-          curl -s -X PATCH \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "Content-Type: application/json" \
-            -d '{"visibility":"public"}' \
-            "https://api.github.com/user/packages/container/${{ github.event.repository.name }}/visibility" || true
-          echo "Package visibility set to public (or already public)"
+            ${{ env.ACR_REGISTRY }}/${{ env.ACR_IMAGE }}:latest
+            ${{ env.ACR_REGISTRY }}/${{ env.ACR_IMAGE }}:${{ github.sha }}
