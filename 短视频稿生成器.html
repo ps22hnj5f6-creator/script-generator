@@ -709,10 +709,10 @@
   .hot-input:focus { outline: none; border-color: var(--accent); }
   .hot-row { display: flex; gap: 6px; margin-top: 6px; }
   .hot-row .btn-sm { flex: 1; }
-  .hot-list { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; max-height: 220px; overflow-y: auto; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); min-height: 40px; }
-  .hot-item { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--text-secondary); padding: 4px 2px; cursor: pointer; line-height: 1.5; }
+  .hot-list { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; max-height: 240px; overflow-y: auto; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); min-height: 40px; }
+  .hot-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--text-secondary); padding: 5px 2px; cursor: pointer; line-height: 1.6; }
   .hot-item input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; }
-  .hot-item span { flex: 1; word-break: break-word; }
+  .hot-item span { flex: 1; word-break: break-all; white-space: pre-wrap; }
   .hot-empty { font-size: 12px; color: var(--text-tertiary); padding: 10px 6px; }
 
   /* 主页模式：2大类类型按钮 */
@@ -956,7 +956,10 @@ function buildHomepageSeed() {
 
 // 跨主播去重：命中当日池则视为重复（不写入）
 function isDuplicateToDaily(text) {
-  if (isDuplicate(text, state.dailyPool)) return true;
+  if (!text || typeof text !== 'string') return false;
+  for (let i = 0; i < state.dailyPool.length; i++) {
+    if (isDuplicate(text, state.dailyPool[i])) return true;
+  }
   state.dailyPool.push(text);
   return false;
 }
@@ -1774,11 +1777,13 @@ const TYPE_LABELS = {
 state.wordCount = 'medium';           // 'short' | 'medium' | 'long'
 
 // ----- DeepSeek 模型配置 -----
+// 线上环境（Sealos等）默认直连 DeepSeek API；本地开发环境默认走代理
+const _isLocalEnv = (location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
 const DEEPSEEK_CONFIG = {
   baseUrl: 'https://api.deepseek.com/chat/completions',
-  proxyUrl: (location.protocol !== 'file:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1')
-    ? '/chat/completions'
-    : 'http://localhost:3001/chat/completions',
+  proxyUrl: _isLocalEnv
+    ? 'http://localhost:3001/chat/completions'
+    : '/chat/completions',
   model: 'deepseek-chat',
   maxTokens: 800,
   temperature: 0.85
@@ -1787,7 +1792,7 @@ const DEEPSEEK_CONFIG = {
 // ----- AI 模式状态 -----
 state.aiMode = 'template';  // 'template' | 'deepseek'
 state.aiApiKey = '';
-state.useProxy = true;
+state.useProxy = _isLocalEnv;  // 本地环境默认走代理，线上默认直连
 
 // ============================================================
 // DeepSeek API 调用
@@ -1997,7 +2002,7 @@ ${seedText}
   return { system: systemPrompt, user: userPrompt };
 }
 
-// 调用 DeepSeek API
+// 调用 DeepSeek API（代理失败时自动降级为直连）
 async function callDeepSeekAPI(systemPrompt, userPrompt) {
   const rawKey = state.aiApiKey || document.getElementById('apiKeyInput').value.trim();
   const apiKey = rawKey.replace(/[^\x20-\x7e]/g, '');
@@ -2024,15 +2029,31 @@ async function callDeepSeekAPI(systemPrompt, userPrompt) {
   try {
     response = await fetch(url, { method: 'POST', headers, body });
   } catch (fetchErr) {
+    // 代理模式下 fetch 失败 → 自动降级为直连 DeepSeek API（线上环境无本地代理时）
     if (state.useProxy && fetchErr.message && fetchErr.message.includes('fetch')) {
-      throw new Error(
-        '代理连接失败。请确认：\n' +
-        '1. 终端已运行: node deepseek-proxy.js\n' +
-        '2. 代理运行在 http://localhost:3001\n' +
-        '（' + fetchErr.message + '）'
-      );
+      if (!_isLocalEnv) {
+        // 线上环境：静默切换到直连，重试一次
+        try {
+          response = await fetch(DEEPSEEK_CONFIG.baseUrl, { method: 'POST', headers, body });
+        } catch (directErr) {
+          throw new Error(
+            '连接失败。请确认：\n' +
+            '1. API Key 是否正确\n' +
+            '2. 网络是否通畅\n' +
+            '（' + directErr.message + '）'
+          );
+        }
+      } else {
+        throw new Error(
+          '代理连接失败。请确认：\n' +
+          '1. 终端已运行: node deepseek-proxy.js\n' +
+          '2. 代理运行在 http://localhost:3001\n' +
+          '（' + fetchErr.message + '）'
+        );
+      }
+    } else {
+      throw new Error('请求失败: ' + fetchErr.message);
     }
-    throw new Error('请求失败: ' + fetchErr.message);
   }
 
   const ct = response.headers.get('content-type') || '';
@@ -3161,12 +3182,12 @@ let _hotItems = [];   // 当前拉取到的热榜条目
 // 内置兜底：本地预览（file:// 协议下 fetch 被浏览器禁止）或线上未部署热榜时，
 // 仍能渲染勾选列表，保证功能可演示；线上 fetch 成功会用真实热榜覆盖。
 const FALLBACK_HOTLIST = [
-  { source: '财联社', title: '半导体板块盘中异动，设备方向资金流入明显', category: 'A股快讯' },
-  { source: '东方财富', title: '光伏板块涨3.2% 组件排产超预期', category: '板块异动' },
-  { source: '微博热搜', title: '美联储议息会议临近 市场观望情绪升温', category: '社会热点' },
-  { source: '新浪财经', title: '新能源补贴退坡传闻发酵 整车链承压', category: '财经热点' },
-  { source: '36氪', title: 'AI 算力租赁价格年内上涨翻倍 中小厂承压', category: '创投科技' },
-  { source: '财联社', title: '北向资金今日净买入 医药生物居首', category: 'A股快讯' }
+  { source: '财联社', title: '央行开展7天期逆回购操作，净投放500亿流动性', category: '财经新闻' },
+  { source: '21世纪经济报道', title: '国务院常务会议研究推进大规模设备更新政策措施', category: '财经新闻' },
+  { source: '第一财经', title: '美联储官员释放鸽派信号，市场预期9月降息概率上升', category: '财经新闻' },
+  { source: '东方财富', title: '半导体板块盘中异动，设备方向资金流入明显', category: '股市热点' },
+  { source: '财联社', title: '光伏板块涨3.2% 组件排产超预期', category: '股市热点' },
+  { source: '新浪财经', title: '北向资金今日净买入 医药生物居首', category: '股市热点' }
 ];
 
 function renderHotTopicsList(items) {
