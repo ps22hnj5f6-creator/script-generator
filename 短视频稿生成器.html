@@ -725,11 +725,33 @@
   .row-hidden { display: none !important; }
   .batch-btn.disabled { opacity: .35; pointer-events: none; }
 
-  /* 右侧面板折叠 */
+  /* 右侧面板折叠：整个面板收起、不占宽度 */
   .right-panel-toggle { cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; }
-  .right-panel-toggle::after { content: '▼'; font-size: 10px; transition: transform .2s; color: var(--text-tertiary); }
-  .right-panel.collapsed .right-panel-toggle::after { transform: rotate(-90deg); }
+  .right-panel.collapsed { width: 0; min-width: 0; border-left: none; overflow: hidden; }
+  .right-panel.collapsed .right-panel-header,
   .right-panel.collapsed .right-panel-body { display: none; }
+  /* 折叠态下用于重新展开的浮标按钮 */
+  .panel-reopen {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 60;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    box-shadow: var(--shadow);
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+  }
+  .panel-reopen:hover { border-color: var(--accent); transform: scale(1.05); }
+  .right-panel.collapsed ~ .panel-reopen { display: flex; }
 </style>
 </head>
 <body>
@@ -848,6 +870,7 @@
     <div class="right-panel-empty">暂未生成稿件</div>
   </div>
 </div>
+<button class="panel-reopen" id="panelReopen" title="展开最近生成" onclick="document.getElementById('rightPanel').classList.remove('collapsed')">📝</button>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
