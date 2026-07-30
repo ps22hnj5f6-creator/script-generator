@@ -9,11 +9,17 @@ macOS 自带 Python 即可运行，无需安装任何东西
 
 import json
 import os
+import ssl
 import sys
 import urllib.request
 import urllib.error
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
+
+# 创建跳过 SSL 验证的上下文（解决公司网络中间人代理/防火墙导致的证书问题）
+_NO_VERIFY_SSL = ssl.create_default_context()
+_NO_VERIFY_SSL.check_hostname = False
+_NO_VERIFY_SSL.verify_mode = ssl.CERT_NONE
 
 PORT = int(os.environ.get('PORT', '3001'))
 BASE_DIR = Path(__file__).parent.resolve()
@@ -59,7 +65,7 @@ class Handler(BaseHTTPRequestHandler):
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with urllib.request.urlopen(req, timeout=60, context=_NO_VERIFY_SSL) as resp:
                 resp_data = resp.read()
                 self.send_response(resp.status)
                 self.send_header('Content-Type', 'application/json')

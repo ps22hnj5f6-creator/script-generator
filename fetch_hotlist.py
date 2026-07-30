@@ -10,6 +10,7 @@
 主页视频"无时效常青内容"由运营生成时选类型决定，本脚本只负责时效性热榜。
 """
 import urllib.request
+import urllib.parse
 import json
 import re
 import datetime
@@ -52,7 +53,9 @@ try:
     for it in d.get("word_list", [])[:50]:
         w = it.get("word") or ""
         if any(k in w for k in FINANCE_KEYWORDS):
-            add("抖音热点榜", w, "抖音财经")
+            # 抖音热榜无原文链接，提供抖音搜索链接方便核实
+            link = "https://www.douyin.com/search/" + urllib.parse.quote(w)
+            add("抖音热点榜", w, "抖音财经", link)
 except Exception as e:
     print("抖音热点榜 失败:", e)
 
@@ -71,8 +74,9 @@ try:
                     or d.get("items") or [])
             for it in news[:15]:
                 t = (it.get("title") or it.get("content") or it.get("name") or "").strip()
+                u = (it.get("url") or it.get("link") or it.get("article_url") or "").strip()
                 if t:
-                    add("爱股票", t, "爱股票要闻")
+                    add("爱股票", t, "爱股票要闻", u)
             if news:
                 ok = True
                 break
@@ -90,8 +94,12 @@ try:
         d = get_json("https://36kr.com/api/newsflash")
         for it in (d.get("data", {}).get("items") or [])[:15]:
             t = (it.get("title") or it.get("content") or "").strip()
+            u = (it.get("item_url") or it.get("url") or it.get("news_url") or "").strip()
+            # 36氪快讯链接转绝对地址
+            if u and not u.startswith("http"):
+                u = "https://36kr.com" + u
             if t:
-                add("36氪", t, "36氪热榜")
+                add("36氪", t, "36氪热榜", u)
         ok = True
     except Exception:
         pass

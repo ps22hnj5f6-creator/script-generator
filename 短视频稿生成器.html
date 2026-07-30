@@ -715,6 +715,20 @@
   .hot-item span { flex: 1; word-break: break-all; white-space: pre-wrap; }
   .hot-empty { font-size: 12px; color: var(--text-tertiary); padding: 10px 6px; }
 
+  /* 热点弹窗：单选卡片 + 来源链接 */
+  .hot-modal-list { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; max-height: 340px; overflow-y: auto; }
+  .hot-card { display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--card-bg); cursor: pointer; transition: all .15s; }
+  .hot-card:hover { border-color: var(--accent); }
+  .hot-card.selected { border-color: var(--accent); background: rgba(99,102,241,.07); box-shadow: 0 0 0 2px rgba(99,102,241,.18); }
+  .hot-card .hot-title { font-size: 13px; color: var(--text-primary); line-height: 1.5; }
+  .hot-card .hot-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+  .hot-card .hot-source { padding: 1px 8px; border-radius: 10px; background: rgba(99,102,241,.1); color: var(--accent); font-weight: 500; white-space: nowrap; }
+  .hot-card .hot-link { color: var(--accent); text-decoration: none; opacity: .85; }
+  .hot-card .hot-link:hover { opacity: 1; text-decoration: underline; }
+  .hot-card .hot-link::before { content: '🔗 '; }
+  .hot-selected-display { margin-top: 6px; padding: 8px 10px; border: 1px dashed var(--border); border-radius: 8px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+  .hot-selected-display strong { color: var(--text-primary); }
+
   /* 主页模式：2大类类型按钮 */
   .type-category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .type-cat-btn { padding: 10px 8px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--card-bg); color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; text-align: center; line-height: 1.4; }
@@ -806,16 +820,12 @@
 
   <!-- 5. 热点区域（选「热点」类型时才显示） -->
   <div id="hotSection" style="display:none;">
-    <div class="section-label" style="margin-top:4px;">🔥 今日热点（勾选要用的）</div>
-    <div id="hotTopicsList" class="hot-list"><div class="hot-empty">点「拉取热榜」获取热点</div></div>
-    <div class="hot-row">
-      <button class="btn-sm" id="btnFetchHot">⬇️ 拉取热榜</button>
+    <div class="section-label" style="margin-top:4px;">🔥 今日热点（单选）</div>
+    <button class="btn-primary" id="btnOpenHotModal" style="width:100%;font-size:13px;padding:9px 12px;">📋 选择今日热点</button>
+    <div id="hotSelectedDisplay" class="hot-selected-display"><span class="hot-empty">尚未选择热点</span></div>
+    <div class="hot-row" style="margin-top:6px;">
       <button class="btn-sm" id="btnClearPool">🧹 清去重池</button>
     </div>
-    <details style="margin-top:6px;">
-      <summary style="font-size:12px;color:var(--text-tertiary);cursor:pointer;">➕ 手动补充热点</summary>
-      <textarea id="hotManualInput" class="hot-input" rows="2" placeholder="每行一条，与上方勾选的合并使用"></textarea>
-    </details>
   </div>
 
   <!-- 6. AI 模型 -->
@@ -2031,7 +2041,6 @@ ${seedText}
 - 结构从 4 种骨架里选一种，别每次一样
 - 语气自然，像真人聊天，不念稿
 - 结尾用养号弱 CTA 或纯观点，不要引流话术
-- 必须带风险提示
 - 直接输出正文，不要标题、编号、说明`;
 
   return { system: systemPrompt, user: userPrompt };
@@ -2136,6 +2145,16 @@ async function generateWithDeepSeek(type) {
 
   // 称呼统一：禁用「老铁」，替换为「朋友」
   cleanText = cleanText.replace(/老铁/g, '朋友');
+
+  // 兜底删除风险提示话术（DeepSeek 可能自发添加，用户要求彻底去掉）
+  cleanText = cleanText
+    .replace(/以上内容?仅(为|系)?(个人|作者|博主)?(观点|看法|见解)?[^。！？\n]*?(不构成|不代表)[^。！？\n]*?投资(建议|意见)[^。！？\n]*/g, '')
+    .replace(/股市有风险[^。！？\n]*?投资需谨慎[^。！？\n]*/g, '')
+    .replace(/投资有风险[^。！？\n]*?入市需(谨慎|理性)[^。！？\n]*/g, '')
+    .replace(/(?:本视频|本文|以上)?(?:内容)?(?:仅供参考|不构成投资建议)[^。！？\n]*/g, '')
+    .replace(/市场有风险[^。！？\n]*?(谨慎|理性)[^。！？\n]*/g, '')
+    .replace(/风险提示[：:][^。！？\n]*/g, '')
+    .replace(/免责声明[：:][^。！？\n]*/g, '');
 
   cleanText = fuzzyOpportunityPlateNames(cleanText);
 
@@ -3223,52 +3242,96 @@ document.getElementById('modeDrain').addEventListener('click', () => {
 
 // ----- 今日热榜：自动拉取 + 人工勾选 -----
 const HOTLIST_URL = 'hotlist.json';
-let _hotItems = [];   // 当前拉取到的热榜条目
+let _hotItems = [];          // 当前拉取到的热榜条目
+let _hotSelectedIdx = -1;    // 单选：当前选中的条目下标（-1 未选）
 
 // 内置兜底：本地预览（file:// 协议下 fetch 被浏览器禁止）或线上未部署热榜时，
-// 仍能渲染勾选列表，保证功能可演示；线上 fetch 成功会用真实热榜覆盖。
+// 仍能渲染列表，保证功能可演示；线上 fetch 成功会用真实热榜覆盖。
 const FALLBACK_HOTLIST = [
-  { source: '抖音热点榜', title: '央行宣布降准0.5个百分点 释放长期资金约1万亿', category: '抖音财经' },
-  { source: '抖音热点榜', title: 'A股三大指数集体收涨 两市成交额重回万亿', category: '抖音财经' },
-  { source: '爱股票', title: '半导体板块盘中异动 设备材料方向资金流入明显', category: '爱股票要闻' },
-  { source: '爱股票', title: '北向资金今日净买入 医药生物板块居首', category: '爱股票要闻' },
-  { source: '36氪', title: 'AI算力租赁价格年内翻倍 中小厂商承压寻求转型', category: '36氪热榜' },
-  { source: '36氪', title: '新能源补贴退坡传闻发酵 整车产业链短期承压', category: '36氪热榜' }
+  { source: '抖音热点榜', title: '央行宣布降准0.5个百分点 释放长期资金约1万亿', category: '抖音财经', url: '' },
+  { source: '抖音热点榜', title: 'A股三大指数集体收涨 两市成交额重回万亿', category: '抖音财经', url: '' },
+  { source: '爱股票', title: '半导体板块盘中异动 设备材料方向资金流入明显', category: '爱股票要闻', url: '' },
+  { source: '爱股票', title: '北向资金今日净买入 医药生物板块居首', category: '爱股票要闻', url: '' },
+  { source: '36氪', title: 'AI算力租赁价格年内翻倍 中小厂商承压寻求转型', category: '36氪热榜', url: '' },
+  { source: '36氪', title: '新能源补贴退坡传闻发酵 整车产业链短期承压', category: '36氪热榜', url: '' }
 ];
 
-function renderHotTopicsList(items) {
+// 渲染弹窗热榜列表（单选卡片 + 来源 + 链接）
+function renderHotModalList(items) {
   _hotItems = items || [];
-  const box = document.getElementById('hotTopicsList');
-  if (!_hotItems.length) { box.innerHTML = '<div class="hot-empty">热榜为空</div>'; return; }
-  box.innerHTML = _hotItems.map((it, i) =>
-    `<label class="hot-item"><input type="checkbox" data-idx="${i}" checked> <span>${escapeHtml(it.title || '')}</span></label>`
-  ).join('');
+  const box = document.getElementById('hotModalList');
+  if (!_hotItems.length) { box.innerHTML = '<div class="hot-empty">热榜为空，可手动补充</div>'; return; }
+  box.innerHTML = _hotItems.map((it, i) => {
+    const sel = (i === _hotSelectedIdx) ? ' selected' : '';
+    const link = it.url
+      ? `<a class="hot-link" href="${escapeHtml(it.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">原文链接</a>`
+      : '';
+    return `<div class="hot-card${sel}" data-idx="${i}" onclick="selectHotCard(${i})">
+      <div class="hot-title">${escapeHtml(it.title || '')}</div>
+      <div class="hot-meta"><span class="hot-source">${escapeHtml(it.source || '未知来源')}</span>${link}</div>
+    </div>`;
+  }).join('');
 }
+
+// 单选：点击卡片选中
+function selectHotCard(i) {
+  _hotSelectedIdx = i;
+  document.querySelectorAll('#hotModalList .hot-card').forEach(c => c.classList.remove('selected'));
+  const card = document.querySelector('#hotModalList .hot-card[data-idx="' + i + '"]');
+  if (card) card.classList.add('selected');
+}
+
+// 取选中的热点 + 手动补充，作为生成输入
 function getSelectedHotTopics() {
-  const checkedIdx = [...document.querySelectorAll('#hotTopicsList input:checked')].map(cb => +cb.dataset.idx);
-  const topics = checkedIdx.map(i => (_hotItems[i] && _hotItems[i].title) || '').filter(Boolean);
-  const manual = (document.getElementById('hotManualInput').value || '').split('\n').map(s => s.trim()).filter(Boolean);
-  return [...topics, ...manual];
+  const topic = (_hotSelectedIdx >= 0 && _hotItems[_hotSelectedIdx]) ? _hotItems[_hotSelectedIdx].title : '';
+  const manual = (document.getElementById('hotManualInput')?.value || '')
+    .split('\n').map(s => s.trim()).filter(Boolean);
+  return [topic, ...manual].filter(Boolean);
 }
-document.getElementById('btnFetchHot').addEventListener('click', async () => {
-  const btn = document.getElementById('btnFetchHot');
-  btn.textContent = '⏳ 拉取中...';
+
+// 拉取热榜（写入弹窗列表）
+async function fetchHotlist() {
+  const btn = document.getElementById('btnFetchHotModal');
+  if (btn) btn.textContent = '⏳ 拉取中...';
   try {
     const res = await fetch(HOTLIST_URL + '?t=' + Date.now());
     if (!res.ok) throw new Error('fetch-fail');
     const data = await res.json();
     const items = (data.items || []).filter(it => it && it.title);
     if (!items.length) throw new Error('empty');
-    renderHotTopicsList(items);
-    showToast('✅ 已拉取 ' + items.length + ' 条热榜，请勾选要使用的');
+    renderHotModalList(items);
+    if (_hotSelectedIdx >= items.length) _hotSelectedIdx = -1;
+    showToast('✅ 已拉取 ' + items.length + ' 条热榜，请单选一条');
   } catch (err) {
     // 本地预览 file:// 下 fetch 必失败，或线上热榜暂未部署 —— 用内置示例兜底渲染
-    renderHotTopicsList(FALLBACK_HOTLIST);
-    showToast('⚠️ 未读到线上热榜（本地预览），已加载示例数据，请勾选要使用的');
+    renderHotModalList(FALLBACK_HOTLIST);
+    showToast('⚠️ 未读到线上热榜（本地预览），已加载示例数据');
   } finally {
-    btn.textContent = '⬇️ 拉取热榜';
+    if (btn) btn.textContent = '⬇️ 拉取热榜';
   }
+}
+
+// 事件绑定
+document.getElementById('btnFetchHotModal').addEventListener('click', fetchHotlist);
+document.getElementById('btnOpenHotModal').addEventListener('click', () => {
+  document.getElementById('hotModal').classList.add('open');
 });
+document.getElementById('btnConfirmHot').addEventListener('click', () => {
+  document.getElementById('hotModal').classList.remove('open');
+  updateHotSelectedDisplay();
+});
+
+// 侧边栏展示已选热点（来源 + 链接）
+function updateHotSelectedDisplay() {
+  const box = document.getElementById('hotSelectedDisplay');
+  if (_hotSelectedIdx >= 0 && _hotItems[_hotSelectedIdx]) {
+    const it = _hotItems[_hotSelectedIdx];
+    const link = it.url ? ` <a class="hot-link" href="${escapeHtml(it.url)}" target="_blank" rel="noopener">🔗原文</a>` : '';
+    box.innerHTML = `<strong>${escapeHtml(it.title)}</strong><br><span class="hot-source" style="display:inline-block;margin-top:4px;">${escapeHtml(it.source || '')}</span>${link}`;
+  } else {
+    box.innerHTML = '<span class="hot-empty">尚未选择热点</span>';
+  }
+}
 
 // ----- 清空当日去重池 -----
 document.getElementById('btnClearPool').addEventListener('click', () => {
@@ -4319,6 +4382,24 @@ window.runTests = function() {
   return { total: tests.length, passed, failed, tests };
 };
 </script>
+
+<!-- 热点选择弹窗（单选 + 来源 + 链接） -->
+<div class="modal-overlay" id="hotModal">
+  <div class="modal" style="max-width:600px;">
+    <h2>🔥 选择今日热点</h2>
+    <div class="subtitle">单选一条作为今日选题，点击卡片即可选中；下方显示来源与原文链接，方便核实</div>
+    <button class="btn-sm" id="btnFetchHotModal" style="margin-bottom:4px;">⬇️ 拉取热榜</button>
+    <div class="hot-modal-list" id="hotModalList"><div class="hot-empty">点「拉取热榜」获取热点，或手动补充</div></div>
+    <details style="margin-top:4px;">
+      <summary style="font-size:12px;color:var(--text-tertiary);cursor:pointer;">➕ 手动补充热点（每行一条，与所选热点合并）</summary>
+      <textarea id="hotManualInput" class="hot-input" rows="2" placeholder="每行一条，例如：&#10;白酒板块异动 茅台盘中翻红"></textarea>
+    </details>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('hotModal').classList.remove('open')">取消</button>
+      <button class="btn-primary" id="btnConfirmHot">确认选择</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
