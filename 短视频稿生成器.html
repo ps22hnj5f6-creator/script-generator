@@ -704,15 +704,16 @@
   ::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: #b0b0b8; }
 
-  /* 主播选择 / 热点框 */
-  .host-grid { display: flex; flex-wrap: wrap; gap: 6px; }
-  .host-btn { flex: 1 1 calc(50% - 6px); padding: 8px 6px; border: 1px solid var(--border); background: var(--card-bg); border-radius: 8px; font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all .15s; }
-  .host-btn:hover { border-color: var(--accent); }
-  .host-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  /* 热点框 */
   .hot-input { width: 100%; box-sizing: border-box; margin-top: 4px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-primary); font-size: 12px; font-family: inherit; resize: vertical; line-height: 1.5; }
   .hot-input:focus { outline: none; border-color: var(--accent); }
   .hot-row { display: flex; gap: 6px; margin-top: 6px; }
   .hot-row .btn-sm { flex: 1; }
+  .hot-list { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; max-height: 200px; overflow-y: auto; padding: 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); }
+  .hot-item { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--text-secondary); padding: 3px 2px; cursor: pointer; line-height: 1.4; }
+  .hot-item input { margin-top: 2px; flex-shrink: 0; cursor: pointer; }
+  .hot-item span { flex: 1; }
+  .hot-empty { font-size: 12px; color: var(--text-tertiary); padding: 6px; }
 </style>
 </head>
 <body>
@@ -755,21 +756,16 @@
     <button class="ai-mode-btn" data-mode="drain" id="modeDrain">💧 引流稿</button>
   </div>
 
-  <div class="section-label" id="hostLabel">👤 主播（主页模式必选）</div>
-  <div class="host-grid" id="hostGrid">
-    <button class="host-btn" data-host="liang">梁方明</button>
-    <button class="host-btn" data-host="wei">卫嘉威</button>
-    <button class="host-btn" data-host="zhangzy">张中源</button>
-    <button class="host-btn" data-host="jin">金军</button>
-    <button class="host-btn" data-host="zhangn">张宁</button>
-  </div>
-
-  <div class="section-label">🔥 今日热点（运营填，每行一条）</div>
-  <textarea id="hotTopicsInput" class="hot-input" rows="4" placeholder="例：&#10;芯片板块异动&#10;美联储议息&#10;新能源补贴退坡"></textarea>
+  <div class="section-label">🔥 今日热点（自动拉取，勾选使用）</div>
+  <div id="hotTopicsList" class="hot-list"><div class="hot-empty">点「拉取热榜」自动获取今日热点，再勾选要用的</div></div>
   <div class="hot-row">
     <button class="btn-sm" id="btnFetchHot">⬇️ 拉取热榜</button>
     <button class="btn-sm" id="btnClearPool">🧹 清去重池</button>
   </div>
+  <details style="margin-top:6px;">
+    <summary style="font-size:12px;color:var(--text-tertiary);cursor:pointer;">➕ 手动补充热点</summary>
+    <textarea id="hotManualInput" class="hot-input" rows="2" placeholder="每行一条，与上方勾选的合并使用"></textarea>
+  </details>
 
   <div class="section-label" style="margin-top:4px;">🤖 AI 模型</div>
   <div class="ai-toggle-row">
@@ -895,20 +891,9 @@ const state = {
   history: [],
   currentScripts: [],  // batch results
   totalGenerated: 0,   // 累计生成总数（不受50条上限影响）
-  hostId: null,        // 当前选中的主播
-  dailyPool: [],       // 当日跨主播去重池（内存，可手动清空）
-  selectedHotTopics: [] // 运营选定的今日热点
+  dailyPool: [],       // 当日去重池（内存，可手动清空，避免同日生成雷同）
+  selectedHotTopics: [] // 运营勾选/补充的今日热点
 };
-
-// ===== 主页视频模式：主播人设（把真实信息填进对应字段即可）=====
-const HOSTS = [
-  { id:'liang',   name:'梁方明', domain:'科技 / 半导体 / 周期', tone:'理性专业、数据说话', catchphrase:'', scene:'盘中解读' },
-  { id:'wei',     name:'卫嘉威', domain:'消费 / 生活 / 情绪', tone:'亲和接地气、像朋友聊天', catchphrase:'', scene:'日常陪伴' },
-  { id:'zhangzy', name:'张中源', domain:'宏观 / 政策面', tone:'沉稳大气、逻辑清晰', catchphrase:'', scene:'收盘复盘' },
-  { id:'jin',     name:'金军',   domain:'题材 / 短线战法', tone:'激进直接、敢给判断', catchphrase:'', scene:'战法教学' },
-  { id:'zhangn',  name:'张宁',   domain:'数据 / 避坑科普', tone:'犀利直白、反套路', catchphrase:'', scene:'数据拆解' }
-];
-// 说明：catchphrase 等字段留空，待你按每位主播真实口头禅/场景补充
 
 // 主页视频：9 种内容类型（来自对标方法论，由投喂稿子归纳，非拍脑袋预设）
 const HOMEPAGE_TYPES = {
@@ -948,15 +933,10 @@ function renderTypeGrid() {
   updateToolbar();
 }
 
-// 主页视频：组合「今日热点 + 主播人设」作为生成输入
+// 主页视频：组合「今日热点」作为生成输入
 function buildHomepageSeed() {
-  const host = HOSTS.find(h => h.id === state.hostId) || null;
   const topics = state.selectedHotTopics.length ? state.selectedHotTopics : ['(运营未指定，可自行结合当前市场热点)'];
-  const hostLine = host
-    ? `主播人设：\n- 姓名：${host.name}\n- 擅长领域：${host.domain}\n- 语气风格：${host.tone}\n- 常用场景：${host.scene}`
-      + (host.catchphrase ? `\n- 口头禅/习惯表达：${host.catchphrase}` : '')
-    : '（未指定主播，使用通用财经博主语气）';
-  return `今日热点 / 板块：\n- ${topics.join('\n- ')}\n\n${hostLine}`;
+  return `今日热点 / 板块：\n- ${topics.join('\n- ')}`;
 }
 
 // 跨主播去重：命中当日池则视为重复（不写入）
@@ -1934,11 +1914,6 @@ function buildHomepagePrompt(type, seedText, wordCount) {
   const charRange = WORD_COUNT_CONFIG[wordCount]?.targetChars || 150;
   const charMin = Math.floor(charRange * 0.7);
   const charMax = Math.ceil(charRange * 1.3);
-  const host = HOSTS.find(h => h.id === state.hostId) || null;
-  const hostLine = host
-    ? `主播人设：\n- 姓名：${host.name}\n- 擅长领域：${host.domain}\n- 语气风格：${host.tone}\n- 常用场景：${host.scene}`
-      + (host.catchphrase ? `\n- 口头禅/习惯表达：${host.catchphrase}` : '')
-    : '（未指定主播，使用通用财经博主语气）';
 
   const hookGuide = `## 开头钩子（6 式，按类型选最合适的一种，前 3 秒必须抓人）
 1. 互动问答：「你有没有想过…」「很多人问我…」
@@ -1973,9 +1948,7 @@ D. 提问 → 拆解 → 结论`;
 
   const typeGuide = (HOMEPAGE_TYPES[type] && HOMEPAGE_TYPES[type].hook) || '结合今日热点做一条有价值的财经短内容';
 
-  const systemPrompt = `你是${host ? host.name + '——' : ''}一位在抖音/视频号做主页短视频的财经博主，目标是养号涨粉、建立专业信任。你不是写稿机器，是真实在市场里泡了十几年、有自己态度的人。
-
-${hostLine}
+  const systemPrompt = `你是一位在抖音/视频号做主页短视频的财经博主，目标是养号涨粉、建立专业信任。你不是写稿机器，是真实在市场里泡了十几年、有自己态度的人。
 
 ${hookGuide}
 
@@ -1991,7 +1964,7 @@ ${riskGuide}
 
 核心原则：说人话、有态度、给价值。主页视频不急着引流，先把人留住、把信任建起来。`;
 
-  const userPrompt = `参考下面的「今日热点 + 主播人设」，完全用全新的语言写一条主页短视频口播稿。句式、节奏、用词全换，但核心信息保留。
+  const userPrompt = `参考下面的「今日热点」，完全用全新的语言写一条主页短视频口播稿。句式、节奏、用词全换，但核心信息保留。
 
 ## 输入：
 ${seedText}
@@ -2001,7 +1974,7 @@ ${seedText}
 - 用自然段分隔，至少分 3 段（段间空行）
 - 开头用上面某一种钩子，3 秒内抓人
 - 结构从 4 种骨架里选一种，别每次一样
-- 语气按人设来，像真人聊天，不念稿
+- 语气自然，像真人聊天，不念稿
 - 结尾用养号弱 CTA 或纯观点，不要引流话术
 - 必须带风险提示
 - 直接输出正文，不要标题、编号、说明`;
@@ -3116,8 +3089,6 @@ document.getElementById('modeHomepage').addEventListener('click', () => {
   state.projectMode = 'homepage';
   document.getElementById('modeHomepage').classList.add('active');
   document.getElementById('modeDrain').classList.remove('active');
-  document.getElementById('hostLabel').style.display = '';
-  document.getElementById('hostGrid').style.display = '';
   document.getElementById('btnGenerate').innerHTML = getGenerateBtnText(state.aiMode === 'deepseek');
   renderTypeGrid();
 });
@@ -3125,23 +3096,27 @@ document.getElementById('modeDrain').addEventListener('click', () => {
   state.projectMode = 'drain';
   document.getElementById('modeDrain').classList.add('active');
   document.getElementById('modeHomepage').classList.remove('active');
-  document.getElementById('hostLabel').style.display = 'none';
-  document.getElementById('hostGrid').style.display = 'none';
   document.getElementById('btnGenerate').innerHTML = getGenerateBtnText(state.aiMode === 'deepseek');
   renderTypeGrid();
 });
 
-// ----- 主播选择 -----
-document.getElementById('hostGrid').addEventListener('click', (e) => {
-  const btn = e.target.closest('.host-btn');
-  if (!btn) return;
-  document.querySelectorAll('.host-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  state.hostId = btn.dataset.host;
-});
-
-// ----- 拉取热榜（读取 hotlist.json，运营可再编辑）-----
+// ----- 今日热榜：自动拉取 + 人工勾选 -----
 const HOTLIST_URL = 'hotlist.json';
+let _hotItems = [];   // 当前拉取到的热榜条目
+function renderHotTopicsList(items) {
+  _hotItems = items || [];
+  const box = document.getElementById('hotTopicsList');
+  if (!_hotItems.length) { box.innerHTML = '<div class="hot-empty">热榜为空</div>'; return; }
+  box.innerHTML = _hotItems.map((it, i) =>
+    `<label class="hot-item"><input type="checkbox" data-idx="${i}" checked> <span>${escapeHtml(it.title || '')}</span></label>`
+  ).join('');
+}
+function getSelectedHotTopics() {
+  const checkedIdx = [...document.querySelectorAll('#hotTopicsList input:checked')].map(cb => +cb.dataset.idx);
+  const topics = checkedIdx.map(i => (_hotItems[i] && _hotItems[i].title) || '').filter(Boolean);
+  const manual = (document.getElementById('hotManualInput').value || '').split('\n').map(s => s.trim()).filter(Boolean);
+  return [...topics, ...manual];
+}
 document.getElementById('btnFetchHot').addEventListener('click', async () => {
   const btn = document.getElementById('btnFetchHot');
   btn.textContent = '⏳ 拉取中...';
@@ -3149,20 +3124,18 @@ document.getElementById('btnFetchHot').addEventListener('click', async () => {
     const res = await fetch(HOTLIST_URL + '?t=' + Date.now());
     if (!res.ok) throw new Error('热榜文件未找到（hotlist.json）');
     const data = await res.json();
-    const items = (data.items || []).map(it => it.title).filter(Boolean);
+    const items = (data.items || []).filter(it => it && it.title);
     if (!items.length) throw new Error('热榜为空');
-    const ta = document.getElementById('hotTopicsInput');
-    ta.value = items.join('\n');
-    state.selectedHotTopics = items;
-    showToast('✅ 已拉取 ' + items.length + ' 条热榜，可编辑后生成');
+    renderHotTopicsList(items);
+    showToast('✅ 已拉取 ' + items.length + ' 条热榜，请勾选要使用的');
   } catch (err) {
-    showToast('⚠️ ' + err.message + '，可手动粘贴热点');
+    showToast('⚠️ ' + err.message + '，可用下方手动补充');
   } finally {
     btn.textContent = '⬇️ 拉取热榜';
   }
 });
 
-// ----- 清空当日跨主播去重池 -----
+// ----- 清空当日去重池 -----
 document.getElementById('btnClearPool').addEventListener('click', () => {
   state.dailyPool = [];
   showToast('🧹 已清空当日去重池');
@@ -3402,17 +3375,9 @@ document.getElementById('btnGenerate').addEventListener('click', async () => {
   btn.classList.add('generating');
   btn.disabled = true;
 
-  // 主页模式：读取运营填写的今日热点，并校验是否已选主播
+  // 主页模式：读取运营勾选/补充的今日热点
   if (state.projectMode === 'homepage') {
-    state.selectedHotTopics = (document.getElementById('hotTopicsInput').value || '')
-      .split('\n').map(s => s.trim()).filter(Boolean);
-    if (!state.hostId) {
-      showToast('⚠️ 请先在侧边栏选择主播');
-      btn.classList.remove('generating');
-      btn.disabled = false;
-      btn.innerHTML = getGenerateBtnText(isAI);
-      return;
-    }
+    state.selectedHotTopics = getSelectedHotTopics();
   }
 
   // 显示初始加载状态
