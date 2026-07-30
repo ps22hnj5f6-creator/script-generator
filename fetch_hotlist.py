@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-每日 15:00（北京时间）拉取多源热榜，归一化后写入 hotlist.json。
-数据源：微博热搜 / 财联社电报 / 东方财富板块异动 / 新浪财经热点 / 36氪创投。
+每日 15:00（北京时间）拉取三源热榜，归一化后写入 hotlist.json。
+数据源（用户指定）：
+  1. 抖音热点榜 —— 筛选其中财经相关条目
+  2. 爱股票 24h 热门要闻
+  3. 36氪 24小时热榜
 每个源独立 try/except，单个源失败不影响其他源。
-说明：主页视频要求"每天保留一条无时效性内容（股民心理按摩/投资心法）"，
-该常青内容由运营在生成时选择对应类型（不依赖热榜），本脚本只负责时效性热榜。
+主页视频"无时效常青内容"由运营生成时选类型决定，本脚本只负责时效性热榜。
 """
 import urllib.request
 import json
@@ -16,6 +18,14 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 
 ITEMS = []
+
+# 抖音热点榜 → 只保留与财经/股市相关的条目
+FINANCE_KEYWORDS = ["股", "A股", "美股", "港股", "基金", "财经", "央行", "美联储",
+                    "经济", "GDP", "通胀", "降息", "加息", "汇率", "人民币", "美元",
+                    "上市", "IPO", "融资", "投资", "理财", "黄金", "原油", "券商",
+                    "白酒", "新能源", "半导体", "光伏", "储能", "科技", "营收",
+                    "利润", "业绩", "退市", "证监会", "监管", "债", "楼市", "房价",
+                    "消费", "企业", "公司", "ChatGPT", "AI", "算力", "锂", "稀土"]
 
 
 def get_json(url, timeout=15):
@@ -36,58 +46,62 @@ def add(source, title, category, url=""):
         ITEMS.append({"source": source, "title": title, "category": category, "url": url})
 
 
-# 1) 微博热搜
+# 1) 抖音热点榜（筛选财经相关）
 try:
-    d = get_json("https://weibo.com/ajax/side/hotSearch")
-    for it in d.get("data", {}).get("realtime", [])[:15]:
-        w = it.get("word") or it.get("note")
-        if w:
-            add("微博热搜", w, "社会热点")
+    d = get_json("https://www.iesdouyin.com/web/api/v2/hotsearch/billboard/word/")
+    for it in d.get("word_list", [])[:50]:
+        w = it.get("word") or ""
+        if any(k in w for k in FINANCE_KEYWORDS):
+            add("抖音热点榜", w, "抖音财经")
 except Exception as e:
-    print("微博热搜 失败:", e)
+    print("抖音热点榜 失败:", e)
 
-# 2) 财联社电报（A股快讯）
+# 2) 爱股票 24h 热门要闻
 try:
-    d = get_json("https://www.cls.cn/nodeapi/getTelegraphList?app=CailianpressWeb&os=web&sv=7.7.5&num=20&page=0")
-    for it in d.get("data", {}).get("data", []):
-        t = it.get("title") or it.get("content")
-        if t:
-            add("财联社", re.sub(r"<[^>]+>", "", t)[:50], "A股快讯", "https://www.cls.cn/telegraph")
+    ok = False
+    for ep in [
+        "https://www.aigupiao.com/api/news/hot?type=24h",
+        "https://www.aigupiao.com/api/article/hot",
+    ]:
+        try:
+            d = get_json(ep)
+            news = (d.get("data", {}).get("list")
+                    or d.get("data")
+                    or d.get("list")
+                    or d.get("items") or [])
+            for it in news[:15]:
+                t = (it.get("title") or it.get("content") or it.get("name") or "").strip()
+                if t:
+                    add("爱股票", t, "爱股票要闻")
+            if news:
+                ok = True
+                break
+        except Exception:
+            continue
+    if not ok:
+        raise Exception("爱股票所有端点均失败")
 except Exception as e:
-    print("财联社 失败:", e)
+    print("爱股票 失败:", e)
 
-# 3) 东方财富 概念板块涨幅榜（板块异动）
+# 3) 36氪 24小时热榜（优先 API，失败则抓首页）
 try:
-    url = ("https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=15&po=1&np=1"
-           "&fltt=2&invt=2&fid=f3&fs=b:BKHQ&fields=f12,f14,f3")
-    d = get_json(url)
-    for it in d.get("data", {}).get("diff", []):
-        name = it.get("f14")
-        chg = it.get("f3")
-        if name:
-            arrow = "涨" if (chg or 0) > 0 else "跌"
-            add("东方财富", f"{name} 板块{arrow}{abs(chg) if chg else 0}%", "板块异动")
-except Exception as e:
-    print("东方财富 失败:", e)
-
-# 4) 新浪财经 热点（best-effort）
-try:
-    d = get_json("https://finance.sina.com.cn/api/hotnews/?page=1&num=15")
-    for it in (d.get("result") or d.get("data") or [])[:15]:
-        t = it.get("title") or it.get("content") or it.get("name")
-        if t:
-            add("新浪财经", t, "财经热点")
-except Exception as e:
-    print("新浪财经 失败:", e)
-
-# 5) 36氪 创投/科技（best-effort，正则取标题）
-try:
-    html = get_text("https://36kr.com/")
-    titles = re.findall(r'class="[^"]*article-item-title[^"]*"[^>]*>(.*?)</a>', html)
-    for t in titles[:15]:
-        t = re.sub(r"<[^>]+>", "", t).strip()
-        if t:
-            add("36氪", t, "创投科技")
+    ok = False
+    try:
+        d = get_json("https://36kr.com/api/newsflash")
+        for it in (d.get("data", {}).get("items") or [])[:15]:
+            t = (it.get("title") or it.get("content") or "").strip()
+            if t:
+                add("36氪", t, "36氪热榜")
+        ok = True
+    except Exception:
+        pass
+    if not ok:
+        html = get_text("https://36kr.com/")
+        titles = re.findall(r'class="[^"]*article-item-title[^"]*"[^>]*>(.*?)</a>', html)
+        for t in titles[:15]:
+            t = re.sub(r"<[^>]+>", "", t).strip()
+            if t:
+                add("36氪", t, "36氪热榜")
 except Exception as e:
     print("36氪 失败:", e)
 

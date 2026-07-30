@@ -3237,12 +3237,12 @@ let _hotItems = [];   // 当前拉取到的热榜条目
 // 内置兜底：本地预览（file:// 协议下 fetch 被浏览器禁止）或线上未部署热榜时，
 // 仍能渲染勾选列表，保证功能可演示；线上 fetch 成功会用真实热榜覆盖。
 const FALLBACK_HOTLIST = [
-  { source: '财联社', title: '央行开展7天期逆回购操作，净投放500亿流动性', category: '财经新闻' },
-  { source: '21世纪经济报道', title: '国务院常务会议研究推进大规模设备更新政策措施', category: '财经新闻' },
-  { source: '第一财经', title: '美联储官员释放鸽派信号，市场预期9月降息概率上升', category: '财经新闻' },
-  { source: '东方财富', title: '半导体板块盘中异动，设备方向资金流入明显', category: '股市热点' },
-  { source: '财联社', title: '光伏板块涨3.2% 组件排产超预期', category: '股市热点' },
-  { source: '新浪财经', title: '北向资金今日净买入 医药生物居首', category: '股市热点' }
+  { source: '抖音热点榜', title: '央行宣布降准0.5个百分点 释放长期资金约1万亿', category: '抖音财经' },
+  { source: '抖音热点榜', title: 'A股三大指数集体收涨 两市成交额重回万亿', category: '抖音财经' },
+  { source: '爱股票', title: '半导体板块盘中异动 设备材料方向资金流入明显', category: '爱股票要闻' },
+  { source: '爱股票', title: '北向资金今日净买入 医药生物板块居首', category: '爱股票要闻' },
+  { source: '36氪', title: 'AI算力租赁价格年内翻倍 中小厂商承压寻求转型', category: '36氪热榜' },
+  { source: '36氪', title: '新能源补贴退坡传闻发酵 整车产业链短期承压', category: '36氪热榜' }
 ];
 
 function renderHotTopicsList(items) {
