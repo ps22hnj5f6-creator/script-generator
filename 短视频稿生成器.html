@@ -703,6 +703,16 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: #b0b0b8; }
+
+  /* 主播选择 / 热点框 */
+  .host-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .host-btn { flex: 1 1 calc(50% - 6px); padding: 8px 6px; border: 1px solid var(--border); background: var(--card-bg); border-radius: 8px; font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all .15s; }
+  .host-btn:hover { border-color: var(--accent); }
+  .host-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  .hot-input { width: 100%; box-sizing: border-box; margin-top: 4px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-primary); font-size: 12px; font-family: inherit; resize: vertical; line-height: 1.5; }
+  .hot-input:focus { outline: none; border-color: var(--accent); }
+  .hot-row { display: flex; gap: 6px; margin-top: 6px; }
+  .hot-row .btn-sm { flex: 1; }
 </style>
 </head>
 <body>
@@ -739,6 +749,28 @@
     <button class="batch-btn" data-words="long">~220字</button>
   </div>
 
+  <div class="section-label">🎯 项目模式</div>
+  <div class="ai-toggle-row">
+    <button class="ai-mode-btn active" data-mode="homepage" id="modeHomepage">📺 主页视频</button>
+    <button class="ai-mode-btn" data-mode="drain" id="modeDrain">💧 引流稿</button>
+  </div>
+
+  <div class="section-label" id="hostLabel">👤 主播（主页模式必选）</div>
+  <div class="host-grid" id="hostGrid">
+    <button class="host-btn" data-host="liang">梁方明</button>
+    <button class="host-btn" data-host="wei">卫嘉威</button>
+    <button class="host-btn" data-host="zhangzy">张中源</button>
+    <button class="host-btn" data-host="jin">金军</button>
+    <button class="host-btn" data-host="zhangn">张宁</button>
+  </div>
+
+  <div class="section-label">🔥 今日热点（运营填，每行一条）</div>
+  <textarea id="hotTopicsInput" class="hot-input" rows="4" placeholder="例：&#10;芯片板块异动&#10;美联储议息&#10;新能源补贴退坡"></textarea>
+  <div class="hot-row">
+    <button class="btn-sm" id="btnFetchHot">⬇️ 拉取热榜</button>
+    <button class="btn-sm" id="btnClearPool">🧹 清去重池</button>
+  </div>
+
   <div class="section-label" style="margin-top:4px;">🤖 AI 模型</div>
   <div class="ai-toggle-row">
     <button class="ai-mode-btn active" data-mode="template" id="modeTemplate">📋 本地运算</button>
@@ -755,7 +787,7 @@
     </label>
   </div>
 
-  <button class="btn-generate" id="btnGenerate">✨ 生成引流稿</button>
+  <button class="btn-generate" id="btnGenerate">✨ 生成主页稿</button>
 
   <div class="sidebar-stats">
     <div class="stats-row">
@@ -856,13 +888,90 @@
 
 // ----- 状态管理 -----
 const state = {
+  projectMode: 'homepage',   // 'homepage' 主页视频 | 'drain' 引流稿
   scriptType: 'news',
   batchCount: 1,
   knowledgeBase: [],
   history: [],
   currentScripts: [],  // batch results
-  totalGenerated: 0    // 累计生成总数（不受50条上限影响）
+  totalGenerated: 0,   // 累计生成总数（不受50条上限影响）
+  hostId: null,        // 当前选中的主播
+  dailyPool: [],       // 当日跨主播去重池（内存，可手动清空）
+  selectedHotTopics: [] // 运营选定的今日热点
 };
+
+// ===== 主页视频模式：主播人设（把真实信息填进对应字段即可）=====
+const HOSTS = [
+  { id:'liang',   name:'梁方明', domain:'科技 / 半导体 / 周期', tone:'理性专业、数据说话', catchphrase:'', scene:'盘中解读' },
+  { id:'wei',     name:'卫嘉威', domain:'消费 / 生活 / 情绪', tone:'亲和接地气、像朋友聊天', catchphrase:'', scene:'日常陪伴' },
+  { id:'zhangzy', name:'张中源', domain:'宏观 / 政策面', tone:'沉稳大气、逻辑清晰', catchphrase:'', scene:'收盘复盘' },
+  { id:'jin',     name:'金军',   domain:'题材 / 短线战法', tone:'激进直接、敢给判断', catchphrase:'', scene:'战法教学' },
+  { id:'zhangn',  name:'张宁',   domain:'数据 / 避坑科普', tone:'犀利直白、反套路', catchphrase:'', scene:'数据拆解' }
+];
+// 说明：catchphrase 等字段留空，待你按每位主播真实口头禅/场景补充
+
+// 主页视频：9 种内容类型（来自对标方法论，由投喂稿子归纳，非拍脑袋预设）
+const HOMEPAGE_TYPES = {
+  massage:   { label:'股民心理按摩', hook:'共鸣安抚：替散户说出心里话' },
+  review:    { label:'新闻复盘',     hook:'事件解读：把当天大事讲明白' },
+  tactic:    { label:'战法教学',     hook:'方法输出：给可复用的套路' },
+  narrative: { label:'泛财经叙事',   hook:'故事化：用叙事带出观点' },
+  venture:   { label:'富豪创投',     hook:'人物故事：用牛人故事讲认知' },
+  macro:     { label:'宏观无废话',   hook:'大势判断：几句说清方向' },
+  qa:        { label:'股市Q&A',      hook:'互动问答：替粉丝问、替你答' },
+  mindset:   { label:'投资心法',     hook:'价值观：长期正确的认知' },
+  datapit:   { label:'数据避坑',     hook:'数据拆解：用数字拆穿误区' }
+};
+const ALL_HOMEPAGE_TYPES = Object.keys(HOMEPAGE_TYPES);
+const DRAIN_TYPES = ['news', 'crisis', 'reverse', 'story', 'dialogue', 'record'];
+
+function getTypeName(type) {
+  if (type === 'random') return '随机';
+  if (state.projectMode === 'homepage') return (HOMEPAGE_TYPES[type] && HOMEPAGE_TYPES[type].label) || type;
+  const m = { news:'新闻突发', crisis:'危机预警', reverse:'反认知', story:'故事沉浸', dialogue:'对话剧情', record:'战绩背书' };
+  return m[type] || type;
+}
+
+// 渲染脚本类型网格（按当前项目模式切换）
+function renderTypeGrid() {
+  const grid = document.getElementById('typeGrid');
+  if (!grid) return;
+  const isHp = state.projectMode === 'homepage';
+  const types = isHp ? ALL_HOMEPAGE_TYPES : DRAIN_TYPES;
+  const icons = isHp
+    ? { massage:'💆', review:'🗞️', tactic:'🎯', narrative:'📺', venture:'🤑', macro:'🌐', qa:'❓', mindset:'🧠', datapit:'📊' }
+    : { news:'📰', crisis:'⚠️', reverse:'🔄', story:'📖', dialogue:'💬', record:'🏆' };
+  grid.innerHTML = types.map(t => `<button class="type-btn" data-type="${t}">${icons[t] || ''} ${getTypeName(t)}</button>`).join('')
+    + '<button class="type-btn" data-type="random">🎲 随机</button>';
+  const first = grid.querySelector('.type-btn');
+  if (first) { first.classList.add('active'); state.scriptType = first.dataset.type; }
+  updateToolbar();
+}
+
+// 主页视频：组合「今日热点 + 主播人设」作为生成输入
+function buildHomepageSeed() {
+  const host = HOSTS.find(h => h.id === state.hostId) || null;
+  const topics = state.selectedHotTopics.length ? state.selectedHotTopics : ['(运营未指定，可自行结合当前市场热点)'];
+  const hostLine = host
+    ? `主播人设：\n- 姓名：${host.name}\n- 擅长领域：${host.domain}\n- 语气风格：${host.tone}\n- 常用场景：${host.scene}`
+      + (host.catchphrase ? `\n- 口头禅/习惯表达：${host.catchphrase}` : '')
+    : '（未指定主播，使用通用财经博主语气）';
+  return `今日热点 / 板块：\n- ${topics.join('\n- ')}\n\n${hostLine}`;
+}
+
+// 跨主播去重：命中当日池则视为重复（不写入）
+function isDuplicateToDaily(text) {
+  if (isDuplicate(text, state.dailyPool)) return true;
+  state.dailyPool.push(text);
+  return false;
+}
+
+// 生成按钮文案（按项目模式区分）
+function getGenerateBtnText(isAI) {
+  const suffix = state.projectMode === 'homepage' ? '主页稿' : '引流稿';
+  if (isAI) return '<img src="deepseek-icon.svg" style="width:18px;height:14px;vertical-align:middle;margin-right:4px">DeepSeek 生成' + suffix;
+  return '✨ 生成' + suffix;
+}
 
 // ----- 预设种子数据（从方法论提取的核心素材）-----
 const DEFAULT_PHRASES = {
@@ -1705,7 +1814,8 @@ function pickRandomSeed(type) {
   return DEFAULT_SEEDS[Math.floor(Math.random() * DEFAULT_SEEDS.length)].text;
 }
 
-function buildDeepSeekPrompt(type, seedText, wordCount = 'medium') {
+function buildDeepSeekPrompt(type, seedText, wordCount = 'medium', mode = state.projectMode) {
+  if (mode === 'homepage') return buildHomepagePrompt(type, seedText, wordCount);
   const charRange = WORD_COUNT_CONFIG[wordCount]?.targetChars || 150;
   const charMin = Math.floor(charRange * 0.7);
   const charMax = Math.ceil(charRange * 1.3);
@@ -1819,6 +1929,86 @@ ${seedText}
   return { system: systemPrompt, user: userPrompt };
 }
 
+// 主页视频模式专用 Prompt（方法论落地版）
+function buildHomepagePrompt(type, seedText, wordCount) {
+  const charRange = WORD_COUNT_CONFIG[wordCount]?.targetChars || 150;
+  const charMin = Math.floor(charRange * 0.7);
+  const charMax = Math.ceil(charRange * 1.3);
+  const host = HOSTS.find(h => h.id === state.hostId) || null;
+  const hostLine = host
+    ? `主播人设：\n- 姓名：${host.name}\n- 擅长领域：${host.domain}\n- 语气风格：${host.tone}\n- 常用场景：${host.scene}`
+      + (host.catchphrase ? `\n- 口头禅/习惯表达：${host.catchphrase}` : '')
+    : '（未指定主播，使用通用财经博主语气）';
+
+  const hookGuide = `## 开头钩子（6 式，按类型选最合适的一种，前 3 秒必须抓人）
+1. 互动问答：「你有没有想过…」「很多人问我…」
+2. 经验背书：「我做了十几年…」「踩过坑才明白…」
+3. 反常识/悬念：「90%的人都搞错了」「这事没那么简单」
+4. 数据/事件：「昨天有个数据…」「刚刚出了个消息…」
+5. 设问共鸣：「为什么散户总是…」「你有没有这种感觉」
+6. 叙事反转：先抛一个反直觉结论，再展开`;
+
+  const structureGuide = `## 结构骨架（4 选 1，不要每次一样）
+A. 现象 → 反转 → 升华
+B. 问题 → 方法 → 行动
+C. 数据 → 解读 → 建议
+D. 提问 → 拆解 → 结论`;
+
+  const toneGuide = `## 语气守则（说人话）
+- 大量用第二人称「你 / 老铁」，像当面聊天
+- 口语虚词：哈、啊、说白了、其实、你想想
+- 短句为主，多分段，一段一行，留白制造节奏
+- 用具体数字、人名、场景增信，别空谈
+- 不端着，不念稿，有个人态度`;
+
+  const ctaGuide = `## 结尾 CTA（主页养号版，弱引导，别硬导流）
+可用：引导关注（「觉得有用点个关注」）、引导互动（「评论区聊聊你怎么看」），或干脆不写 CTA 纯输出观点。
+禁止：出现「点头像进直播间」「加微信」「私信」等引流话术（那是引流稿用的）。`;
+
+  const riskGuide = `## 合规红线（必须守）
+- 不推荐具体个股的买卖，不给买卖点，不承诺收益
+- 不提及内部消息、内幕、机构合作等违规内容
+- 文末必须带一句风险提示：「以上内容仅为个人观点，不构成投资建议，股市有风险，投资需谨慎」
+- 自动过滤禁词（系统会再处理一遍，但你尽量少用）`;
+
+  const typeGuide = (HOMEPAGE_TYPES[type] && HOMEPAGE_TYPES[type].hook) || '结合今日热点做一条有价值的财经短内容';
+
+  const systemPrompt = `你是${host ? host.name + '——' : ''}一位在抖音/视频号做主页短视频的财经博主，目标是养号涨粉、建立专业信任。你不是写稿机器，是真实在市场里泡了十几年、有自己态度的人。
+
+${hostLine}
+
+${hookGuide}
+
+${structureGuide}
+
+${toneGuide}
+
+${ctaGuide}
+
+${riskGuide}
+
+稿件类型方向：${typeGuide}
+
+核心原则：说人话、有态度、给价值。主页视频不急着引流，先把人留住、把信任建起来。`;
+
+  const userPrompt = `参考下面的「今日热点 + 主播人设」，完全用全新的语言写一条主页短视频口播稿。句式、节奏、用词全换，但核心信息保留。
+
+## 输入：
+${seedText}
+
+## 要求：
+- ${charMin} 到 ${charMax} 字
+- 用自然段分隔，至少分 3 段（段间空行）
+- 开头用上面某一种钩子，3 秒内抓人
+- 结构从 4 种骨架里选一种，别每次一样
+- 语气按人设来，像真人聊天，不念稿
+- 结尾用养号弱 CTA 或纯观点，不要引流话术
+- 必须带风险提示
+- 直接输出正文，不要标题、编号、说明`;
+
+  return { system: systemPrompt, user: userPrompt };
+}
+
 // 调用 DeepSeek API
 async function callDeepSeekAPI(systemPrompt, userPrompt) {
   const rawKey = state.aiApiKey || document.getElementById('apiKeyInput').value.trim();
@@ -1890,9 +2080,16 @@ async function callDeepSeekAPI(systemPrompt, userPrompt) {
 
 // DeepSeek 模式下的生成流程
 async function generateWithDeepSeek(type) {
-  const templateScript = generateScriptRaw(type, state.wordCount);
-  const seedText = templateScript.full;
-  const { system: systemPrompt, user: userPrompt } = buildDeepSeekPrompt(type, seedText, state.wordCount);
+  let actualType = type;
+  let seedText;
+  if (state.projectMode === 'homepage') {
+    actualType = (type === 'random') ? ALL_HOMEPAGE_TYPES[Math.floor(Math.random() * ALL_HOMEPAGE_TYPES.length)] : type;
+    seedText = buildHomepageSeed();
+  } else {
+    const templateScript = generateScriptRaw(type, state.wordCount);
+    seedText = templateScript.full;
+  }
+  const { system: systemPrompt, user: userPrompt } = buildDeepSeekPrompt(actualType, seedText, state.wordCount);
   const text = await callDeepSeekAPI(systemPrompt, userPrompt);
 
   const hasFW = hasForbiddenWord(text);
@@ -2816,6 +3013,15 @@ const WORD_COUNT_CONFIG = {
 
 // ====== 统一分发（原始生成，不含禁词过滤）======
 function generateScriptRaw(type, wordCount = 'medium') {
+  if (state.projectMode === 'homepage') {
+    const seed = buildHomepageSeed();
+    return {
+      full: '【本地草稿·建议用 DeepSeek 生成】\n' + seed + '\n\n（本地运算模式暂不生成完整主页稿，请切换到 DeepSeek 获得完整成稿）',
+      structure: { sentenceCount: 0 }, type, charCount: 0, wordCount,
+      timestamp: new Date().toISOString(),
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+    };
+  }
   const pool = buildPhrasePool();
   // 否定目标使用上月市场表现好的板块
   pool.negateTargetList = getMonthlyHotSectors();
@@ -2850,11 +3056,12 @@ function generateScriptRaw(type, wordCount = 'medium') {
 }
 
 // ====== 随机类型解析 ======
-const ALL_TYPES = ['news', 'crisis', 'reverse', 'story', 'dialogue', 'record'];
+const ALL_TYPES = DRAIN_TYPES;
 
 function resolveType(type, allowSame = false) {
   if (type !== 'random') return type;
-  return ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
+  const pool = state.projectMode === 'homepage' ? ALL_HOMEPAGE_TYPES : DRAIN_TYPES;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 // ====== 带禁词过滤的生成（UI调用的入口）======
@@ -2893,7 +3100,7 @@ document.getElementById('modeTemplate').addEventListener('click', () => {
   document.getElementById('modeTemplate').classList.add('active');
   document.getElementById('modeDeepseek').classList.remove('active');
   document.getElementById('aiConfig').style.display = 'none';
-  document.getElementById('btnGenerate').textContent = '✨ 生成引流稿';
+  document.getElementById('btnGenerate').innerHTML = getGenerateBtnText(false);
 });
 
 document.getElementById('modeDeepseek').addEventListener('click', () => {
@@ -2901,7 +3108,64 @@ document.getElementById('modeDeepseek').addEventListener('click', () => {
   document.getElementById('modeDeepseek').classList.add('active');
   document.getElementById('modeTemplate').classList.remove('active');
   document.getElementById('aiConfig').style.display = 'flex';
-  document.getElementById('btnGenerate').innerHTML = '<img src="deepseek-icon.svg" style="width:18px;height:14px;vertical-align:middle;margin-right:4px">DeepSeek 生成引流稿';
+  document.getElementById('btnGenerate').innerHTML = getGenerateBtnText(true);
+});
+
+// ----- 项目模式切换（主页视频 / 引流稿）-----
+document.getElementById('modeHomepage').addEventListener('click', () => {
+  state.projectMode = 'homepage';
+  document.getElementById('modeHomepage').classList.add('active');
+  document.getElementById('modeDrain').classList.remove('active');
+  document.getElementById('hostLabel').style.display = '';
+  document.getElementById('hostGrid').style.display = '';
+  document.getElementById('btnGenerate').innerHTML = getGenerateBtnText(state.aiMode === 'deepseek');
+  renderTypeGrid();
+});
+document.getElementById('modeDrain').addEventListener('click', () => {
+  state.projectMode = 'drain';
+  document.getElementById('modeDrain').classList.add('active');
+  document.getElementById('modeHomepage').classList.remove('active');
+  document.getElementById('hostLabel').style.display = 'none';
+  document.getElementById('hostGrid').style.display = 'none';
+  document.getElementById('btnGenerate').innerHTML = getGenerateBtnText(state.aiMode === 'deepseek');
+  renderTypeGrid();
+});
+
+// ----- 主播选择 -----
+document.getElementById('hostGrid').addEventListener('click', (e) => {
+  const btn = e.target.closest('.host-btn');
+  if (!btn) return;
+  document.querySelectorAll('.host-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.hostId = btn.dataset.host;
+});
+
+// ----- 拉取热榜（读取 hotlist.json，运营可再编辑）-----
+const HOTLIST_URL = 'hotlist.json';
+document.getElementById('btnFetchHot').addEventListener('click', async () => {
+  const btn = document.getElementById('btnFetchHot');
+  btn.textContent = '⏳ 拉取中...';
+  try {
+    const res = await fetch(HOTLIST_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error('热榜文件未找到（hotlist.json）');
+    const data = await res.json();
+    const items = (data.items || []).map(it => it.title).filter(Boolean);
+    if (!items.length) throw new Error('热榜为空');
+    const ta = document.getElementById('hotTopicsInput');
+    ta.value = items.join('\n');
+    state.selectedHotTopics = items;
+    showToast('✅ 已拉取 ' + items.length + ' 条热榜，可编辑后生成');
+  } catch (err) {
+    showToast('⚠️ ' + err.message + '，可手动粘贴热点');
+  } finally {
+    btn.textContent = '⬇️ 拉取热榜';
+  }
+});
+
+// ----- 清空当日跨主播去重池 -----
+document.getElementById('btnClearPool').addEventListener('click', () => {
+  state.dailyPool = [];
+  showToast('🧹 已清空当日去重池');
 });
 
 // 保存 API Key
@@ -2962,13 +3226,7 @@ document.getElementById('wordCountRow').addEventListener('click', (e) => {
 
 // ----- 工具栏更新 -----
 function updateToolbar() {
-  const typeNames = {
-    news: '新闻突发型', crisis: '危机预警型', reverse: '反认知型',
-    story: '故事沉浸型', dialogue: '对话剧情型', record: '战绩背书型',
-    random: '随机'
-  };
-
-  document.getElementById('toolbarTitle').textContent = typeNames[state.scriptType] || state.scriptType;
+  document.getElementById('toolbarTitle').textContent = getTypeName(state.scriptType);
 }
 
 // ----- 显示生成结果（批量模式）-----
@@ -3144,6 +3402,19 @@ document.getElementById('btnGenerate').addEventListener('click', async () => {
   btn.classList.add('generating');
   btn.disabled = true;
 
+  // 主页模式：读取运营填写的今日热点，并校验是否已选主播
+  if (state.projectMode === 'homepage') {
+    state.selectedHotTopics = (document.getElementById('hotTopicsInput').value || '')
+      .split('\n').map(s => s.trim()).filter(Boolean);
+    if (!state.hostId) {
+      showToast('⚠️ 请先在侧边栏选择主播');
+      btn.classList.remove('generating');
+      btn.disabled = false;
+      btn.innerHTML = getGenerateBtnText(isAI);
+      return;
+    }
+  }
+
   // 显示初始加载状态
   showLoading(0, count);
   document.getElementById('scriptArea').scrollTop = 0;
@@ -3160,7 +3431,8 @@ document.getElementById('btnGenerate').addEventListener('click', async () => {
           if (count > 1) showLoading(i + 1, count);
           updateLoadingText('正在请求 DeepSeek 生成第 ' + (i + 1) + ' 条...');
           const actualType = resolveType(state.scriptType, count > 1);
-          const script = await generateWithDeepSeek(actualType);
+          let script = await generateWithDeepSeek(actualType);
+          if (isDuplicateToDaily(script.full)) script = await generateWithDeepSeek(actualType); // 撞车重试一次
           results.push(script);
           addToHistory(script);
         }
@@ -3169,7 +3441,8 @@ document.getElementById('btnGenerate').addEventListener('click', async () => {
         for (let i = 0; i < count; i++) {
           if (count > 1) showLoading(i + 1, count);
           const actualType = resolveType(state.scriptType, count > 1);
-          const result = generateScript(actualType);
+          let result = generateScript(actualType);
+          if (isDuplicateToDaily(result.script.full)) result = generateScript(actualType);
           if (!result.clean) censored++;
           results.push({ ...result.script, censoredRetries: result.retries, clean: result.clean, dirtyWord: result.dirtyWord });
           addToHistory(result.script);
@@ -3196,7 +3469,7 @@ document.getElementById('btnGenerate').addEventListener('click', async () => {
         (isAI ? '<p style="font-size:12px;margin-top:12px;color:var(--text-tertiary);">请检查 API Key 是否正确，或切换到本地运算模式</p>' : '');
       showToast('❌ 生成失败: ' + err.message);
     } finally {
-      btn.innerHTML = isAI ? '<img src="deepseek-icon.svg" style="width:18px;height:14px;vertical-align:middle;margin-right:4px">DeepSeek 生成引流稿' : '✨ 生成引流稿';
+      btn.innerHTML = getGenerateBtnText(isAI);
       btn.classList.remove('generating');
       btn.disabled = false;
       updateStats();
@@ -3410,9 +3683,8 @@ document.getElementById('btnFeedConfirm').addEventListener('click', () => {
   renderKnowledgeBase();
 
   // 构造结果消息
-  const typeNames = {news:'新闻突发',crisis:'危机预警',reverse:'反认知',story:'故事沉浸',dialogue:'对话剧情',record:'战绩背书'};
   const summary = Object.entries(typeStats)
-    .map(([t, c]) => `${typeNames[t]||t}×${c}`)
+    .map(([t, c]) => `${getTypeName(t)}×${c}`)
     .join('、');
 
   let msg = `✅ 批量学习完成：${deduped.length} 条（${summary}）`;
@@ -3541,11 +3813,6 @@ function renderKnowledgeBase() {
     return;
   }
 
-  const typeNames = {
-    news: '📰 新闻突发', crisis: '⚠️ 危机预警', reverse: '🔄 反认知',
-    story: '📖 故事沉浸', dialogue: '💬 对话剧情', record: '🏆 战绩背书'
-  };
-
   // 按批次分组显示
   const batches = new Map();
   state.knowledgeBase.forEach((item, index) => {
@@ -3565,7 +3832,7 @@ function renderKnowledgeBase() {
       </div>`;
     }
     group.forEach(({ item, index }) => {
-      const typeLabel = (typeNames[item.type] || item.type).split(' ')[1] || item.type;
+      const typeLabel = getTypeName(item.type);
       html += `
         <div class="kb-doc-item" style="margin-bottom:8px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
@@ -3800,9 +4067,8 @@ function loadDefaultSeeds() {
   updateStats();
   renderKnowledgeBase();
 
-  const typeNames = {news:'新闻突发',crisis:'危机预警',reverse:'反认知',story:'故事沉浸',dialogue:'对话剧情',record:'战绩背书'};
   const summary = Object.entries(typeStats)
-    .map(([t, c]) => typeNames[t] + '×' + c)
+    .map(([t, c]) => getTypeName(t) + '×' + c)
     .join('、');
 
   return { count: deduped.length, skipped: totalSkipped, summary };
@@ -3839,16 +4105,11 @@ function renderHistory() {
     return;
   }
 
-  const typeNames = {
-    news: '📰 新闻突发', crisis: '⚠️ 危机预警', reverse: '🔄 反认知', 
-    story: '📖 故事沉浸', dialogue: '💬 对话剧情', record: '🏆 战绩背书'
-  };
-
   body.innerHTML = state.history.map(h => {
     const time = new Date(h.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
     return `
     <div class="history-item" onclick="loadHistoryItem('${h.id}')">
-      <div class="h-type">${typeNames[h.type] || h.type}</div>
+      <div class="h-type">${getTypeName(h.type)}</div>
       <div class="h-preview">${escapeHtml(h.preview)}</div>
       <div class="h-time">${time}</div>
     </div>`;
@@ -3948,6 +4209,7 @@ document.addEventListener('keydown', (e) => {
 
 function init() {
   loadData();
+  renderTypeGrid();   // 按默认项目模式（主页视频）渲染类型
   updateToolbar();
   updateStats();
   renderHistory();

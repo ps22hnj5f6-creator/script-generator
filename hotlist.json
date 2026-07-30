@@ -1,0 +1,11 @@
+{
+  "updated_at": "示例数据（待定时任务每日15:00更新）",
+  "items": [
+    { "source": "财联社", "title": "半导体板块盘中异动，设备方向资金流入明显", "category": "A股快讯", "url": "https://www.cls.cn/telegraph" },
+    { "source": "东方财富", "title": "光伏板块涨3.2% 组件排产超预期", "category": "板块异动", "url": "" },
+    { "source": "微博热搜", "title": "美联储议息会议临近 市场观望情绪升温", "category": "社会热点", "url": "" },
+    { "source": "新浪财经", "title": "新能源补贴退坡传闻发酵 整车链承压", "category": "财经热点", "url": "" },
+    { "source": "36氪", "title": "AI 算力租赁价格年内上涨翻倍 中小厂承压", "category": "创投科技", "url": "" },
+    { "source": "财联社", "title": "北向资金今日净买入 医药生物居首", "category": "A股快讯", "url": "https://www.cls.cn/telegraph" }
+  ]
+}
