@@ -842,7 +842,7 @@
 </main>
 
 <!-- Right Panel: Recent History (collapsible) -->
-<div class="right-panel" id="rightPanel">
+<div class="right-panel collapsed" id="rightPanel">
   <div class="right-panel-header right-panel-toggle" id="rightPanelToggle" onclick="document.getElementById('rightPanel').classList.toggle('collapsed')">📝 最近生成</div>
   <div class="right-panel-body" id="rightPanelBody">
     <div class="right-panel-empty">暂未生成稿件</div>
@@ -2029,26 +2029,18 @@ async function callDeepSeekAPI(systemPrompt, userPrompt) {
   try {
     response = await fetch(url, { method: 'POST', headers, body });
   } catch (fetchErr) {
-    // 代理模式下 fetch 失败 → 自动降级为直连 DeepSeek API（线上环境无本地代理时）
+    // 代理模式下 fetch 失败 → 自动降级为直连 DeepSeek API
     if (state.useProxy && fetchErr.message && fetchErr.message.includes('fetch')) {
-      if (!_isLocalEnv) {
-        // 线上环境：静默切换到直连，重试一次
-        try {
-          response = await fetch(DEEPSEEK_CONFIG.baseUrl, { method: 'POST', headers, body });
-        } catch (directErr) {
-          throw new Error(
-            '连接失败。请确认：\n' +
-            '1. API Key 是否正确\n' +
-            '2. 网络是否通畅\n' +
-            '（' + directErr.message + '）'
-          );
-        }
-      } else {
+      // 无论本地还是线上，都尝试直连降级
+      try {
+        response = await fetch(DEEPSEEK_CONFIG.baseUrl, { method: 'POST', headers, body });
+      } catch (directErr) {
         throw new Error(
-          '代理连接失败。请确认：\n' +
-          '1. 终端已运行: node deepseek-proxy.js\n' +
-          '2. 代理运行在 http://localhost:3001\n' +
-          '（' + fetchErr.message + '）'
+          '连接失败（代理不可用且直连也失败）。\n' +
+          (_isLocalEnv
+            ? '本地使用请启动代理: node deepseek-proxy.js\n或检查网络是否可访问 api.deepseek.com'
+            : '请检查网络连接') +
+          '\n（' + directErr.message + '）'
         );
       }
     } else {
