@@ -806,10 +806,12 @@
   </div>
 
   <!-- 6. AI 模型 -->
-  <div class="section-label" id="aiModelLabel" style="margin-top:4px;">🤖 AI 模型</div>
-  <div class="ai-toggle-row">
-    <button class="ai-mode-btn active" data-mode="template" id="modeTemplate">📋 本地运算</button>
-    <button class="ai-mode-btn" data-mode="deepseek" id="modeDeepseek"><img src="deepseek-icon.svg" style="width:18px;height:14px;vertical-align:middle;margin-right:4px">DeepSeek</button>
+  <div id="aiModelToggleSection" style="margin-top:4px;">
+    <div class="section-label" id="aiModelLabel">🤖 AI 模型</div>
+    <div class="ai-toggle-row">
+      <button class="ai-mode-btn active" data-mode="template" id="modeTemplate">📋 本地运算</button>
+      <button class="ai-mode-btn" data-mode="deepseek" id="modeDeepseek"><img src="deepseek-icon.svg" style="width:18px;height:14px;vertical-align:middle;margin-right:4px">DeepSeek</button>
+    </div>
   </div>
   <div class="ai-config" id="aiConfig" style="display:none;">
     <input type="password" class="api-key-input" id="apiKeyInput" placeholder="输入 DeepSeek API Key">
@@ -3152,6 +3154,7 @@ function syncModeUI() {
   const isHp = state.projectMode === 'homepage';
   const wcRow = document.getElementById('wordCountRow');
   const batchRow = document.getElementById('batchRow');
+  const aiToggleSection = document.getElementById('aiModelToggleSection');
 
   // 字数选择：主页隐藏（固定800-1000），引流显示
   if (wcRow) wcRow.style.display = isHp ? 'none' : '';
@@ -3167,6 +3170,18 @@ function syncModeUI() {
 
   // 主页模式默认字数
   if (isHp) state.wordCount = 'homepage';
+
+  // 主页模式：强制使用 AI（DeepSeek），并隐藏 AI 模型选择框
+  if (aiToggleSection) aiToggleSection.style.display = isHp ? 'none' : '';
+  if (isHp) {
+    state.aiMode = 'deepseek';
+    document.getElementById('modeDeepseek').classList.add('active');
+    document.getElementById('modeTemplate').classList.remove('active');
+    document.getElementById('aiConfig').style.display = 'flex';  // 主页仍需填 API Key
+  } else {
+    // 引流模式：恢复用户选定的 AI 模式对应的配置显隐
+    document.getElementById('aiConfig').style.display = (state.aiMode === 'deepseek') ? 'flex' : 'none';
+  }
 
   // 热点区域显隐
   syncHotSectionVisibility();
