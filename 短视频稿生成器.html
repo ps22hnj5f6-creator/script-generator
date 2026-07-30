@@ -837,7 +837,7 @@
     </div>
   </div>
   <div class="ai-config" id="aiConfig" style="display:none;">
-    <input type="password" class="api-key-input" id="apiKeyInput" placeholder="输入 DeepSeek API Key">
+    <input type="password" class="api-key-input" id="apiKeyInput" placeholder="输入 DeepSeek API Key" value="">
     <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px;">
       模型：DeepSeek V3（快速） · Key 仅存储在本地浏览器
     </div>
@@ -3145,6 +3145,14 @@ function generateScript(type) {
 // UI 交互
 // ============================================================
 
+// 安全事件绑定：元素不存在时不崩溃（兼容部分页面/渐进加载）
+function $(id) { return document.getElementById(id); }
+function onBind(id, event, fn) {
+  const el = $(id);
+  if (el) el.addEventListener(event, fn);
+  else console.warn('⚠️ 元素 #' + id + ' 未找到，跳过事件绑定');
+}
+
 // ----- Toast -----
 function showToast(msg) {
   const toast = document.getElementById('toast');
@@ -3155,7 +3163,7 @@ function showToast(msg) {
 }
 
 // ----- 类型选择 -----
-document.getElementById('typeGrid').addEventListener('click', (e) => {
+onBind('typeGrid', 'click', (e) => {
   const btn = e.target.closest('.type-btn, .type-cat-btn');
   if (!btn) return;
   // 清除同组所有 active
@@ -3168,7 +3176,7 @@ document.getElementById('typeGrid').addEventListener('click', (e) => {
 });
 
 // ----- AI 模式切换 -----
-document.getElementById('modeTemplate').addEventListener('click', () => {
+onBind('modeTemplate', 'click', () => {
   state.aiMode = 'template';
   document.getElementById('modeTemplate').classList.add('active');
   document.getElementById('modeDeepseek').classList.remove('active');
@@ -3176,7 +3184,7 @@ document.getElementById('modeTemplate').addEventListener('click', () => {
   document.getElementById('btnGenerate').innerHTML = getGenerateBtnText(false);
 });
 
-document.getElementById('modeDeepseek').addEventListener('click', () => {
+onBind('modeDeepseek', 'click', () => {
   state.aiMode = 'deepseek';
   document.getElementById('modeDeepseek').classList.add('active');
   document.getElementById('modeTemplate').classList.remove('active');
@@ -3225,14 +3233,14 @@ function syncModeUI() {
   document.getElementById('btnGenerate').innerHTML = getGenerateBtnText(state.aiMode === 'deepseek');
 }
 
-document.getElementById('modeHomepage').addEventListener('click', () => {
+onBind('modeHomepage','click', () => {
   state.projectMode = 'homepage';
   document.getElementById('modeHomepage').classList.add('active');
   document.getElementById('modeDrain').classList.remove('active');
   syncModeUI();
   renderTypeGrid();
 });
-document.getElementById('modeDrain').addEventListener('click', () => {
+onBind('modeDrain','click', () => {
   state.projectMode = 'drain';
   document.getElementById('modeDrain').classList.add('active');
   document.getElementById('modeHomepage').classList.remove('active');
@@ -3312,11 +3320,11 @@ async function fetchHotlist() {
 }
 
 // 事件绑定
-document.getElementById('btnFetchHotModal').addEventListener('click', fetchHotlist);
-document.getElementById('btnOpenHotModal').addEventListener('click', () => {
+onBind('btnFetchHotModal','click', fetchHotlist);
+onBind('btnOpenHotModal','click', () => {
   document.getElementById('hotModal').classList.add('open');
 });
-document.getElementById('btnConfirmHot').addEventListener('click', () => {
+onBind('btnConfirmHot','click', () => {
   document.getElementById('hotModal').classList.remove('open');
   updateHotSelectedDisplay();
 });
@@ -3334,19 +3342,19 @@ function updateHotSelectedDisplay() {
 }
 
 // ----- 清空当日去重池 -----
-document.getElementById('btnClearPool').addEventListener('click', () => {
+onBind('btnClearPool','click', () => {
   state.dailyPool = [];
   showToast('🧹 已清空当日去重池');
 });
 
 // 保存 API Key
-document.getElementById('apiKeyInput').addEventListener('input', (e) => {
+onBind('apiKeyInput','input', (e) => {
   state.aiApiKey = e.target.value;
   try { localStorage.setItem('ds_api_key', e.target.value); } catch {}
 });
 
 // 代理开关
-document.getElementById('proxyToggle').addEventListener('change', (e) => {
+onBind('proxyToggle','change', (e) => {
   state.useProxy = e.target.checked;
   try { localStorage.setItem('ds_use_proxy', e.target.checked ? '1' : '0'); } catch {}
 });
@@ -3377,7 +3385,7 @@ try {
 } catch {}
 
 // ----- 生成数量选择 -----
-document.getElementById('batchRow').addEventListener('click', (e) => {
+onBind('batchRow','click', (e) => {
   const btn = e.target.closest('.batch-btn');
   if (!btn) return;
   document.querySelectorAll('#batchRow .batch-btn').forEach(b => b.classList.remove('active'));
@@ -3386,7 +3394,7 @@ document.getElementById('batchRow').addEventListener('click', (e) => {
 });
 
 // ----- 文案字数选择 -----
-document.getElementById('wordCountRow').addEventListener('click', (e) => {
+onBind('wordCountRow','click', (e) => {
   const btn = e.target.closest('.batch-btn');
   if (!btn) return;
   document.querySelectorAll('#wordCountRow .batch-btn').forEach(b => b.classList.remove('active'));
@@ -3564,7 +3572,7 @@ function escapeHtml(str) {
 }
 
 // ----- 生成按钮 -----
-document.getElementById('btnGenerate').addEventListener('click', async () => {
+onBind('btnGenerate','click', async () => {
   const btn = document.getElementById('btnGenerate');
   const count = state.batchCount;
   const isAI = state.aiMode === 'deepseek';
@@ -3641,7 +3649,7 @@ document.getElementById('btnGenerate').addEventListener('click', async () => {
 });
 
 // ----- 复制（全部）-----
-document.getElementById('btnCopy').addEventListener('click', async () => {
+onBind('btnCopy','click', async () => {
   if (!state.currentScripts.length) return;
 
   const allText = state.currentScripts.map((s, i) =>
@@ -3664,7 +3672,7 @@ document.getElementById('btnCopy').addEventListener('click', async () => {
 });
 
 // ----- 换一版（全部重新生成）-----
-document.getElementById('btnRegenerate').addEventListener('click', () => {
+onBind('btnRegenerate','click', () => {
   const btn = document.getElementById('btnRegenerate');
   const count = state.batchCount;
   btn.textContent = '⏳ ...';
@@ -3829,12 +3837,12 @@ function dedupScripts(items, existingItems) {
 }
 
 // ----- 知识库面板 -----
-document.getElementById('btnKb').addEventListener('click', () => {
+onBind('btnKb','click', () => {
   document.getElementById('kbPanel').classList.add('open');
   renderKnowledgeBase();
 });
 
-document.getElementById('btnKbClose').addEventListener('click', () => {
+onBind('btnKbClose','click', () => {
   document.getElementById('kbPanel').classList.remove('open');
 });
 
