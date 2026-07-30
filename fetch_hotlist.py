@@ -37,7 +37,8 @@ FINANCE_KEYWORDS = ["股", "A股", "美股", "港股", "基金", "财经", "央�
                     "白酒", "新能源", "半导体", "光伏", "储能", "科技", "营收",
                     "利润", "业绩", "退市", "证监会", "监管", "债", "楼市", "房价",
                     "消费", "企业", "公司", "ChatGPT", "AI", "算力", "锂", "稀土",
-                    "债券", "期货", "券商", "银行", "保险", "地产"]
+                    "债券", "期货", "银行", "保险", "地产", "负债", "亏损", "财报",
+                    "市值", "涨停", "跌停", "牛市", "熊市", "抄底", "套牢"]
 
 
 def _get_json(url, timeout=15, headers=None):
@@ -200,23 +201,30 @@ def fetch_36kr():
 # 4) 微博热搜（社会榜 + 科技榜）
 # ============================================================
 def fetch_weibo():
-    """微博热搜（社会榜 + 科技榜）。
-    注：微博公开接口未对每条打「社会/科技」标签，这里取热搜总榜按热度排序的前 N 条，
-    其中天然包含社会与科技热点；具体选用哪条由前端单选决定。"""
+    """微博热搜（社会榜 + 科技榜）—— 只保留财经相关条目。
+    从热搜总榜中用 FINANCE_KEYWORDS 过滤出财经/股市/经济相关话题，
+    确保每条都是可做财经视频选题的内容。"""
     items = []
     try:
         d = _get_json("https://weibo.com/ajax/side/hotSearch",
                       headers={"Referer": "https://weibo.com/",
                                "Accept": "application/json, text/plain, */*"})
         arr = (d.get("data") or {}).get("realtime") or []
-        # 按热度 num 降序，取前 10
-        arr = sorted(arr, key=lambda x: (x.get("num") or 0), reverse=True)[:10]
+        # 按热度降序，逐条筛选财经相关
+        arr = sorted(arr, key=lambda x: (x.get("num") or 0), reverse=True)
+        count = 0
         for it in arr:
             w = it.get("word") or ""
+            # 只保留财经/股市/经济/科技/AI 相关条目（同抖音筛选逻辑）
+            if not any(k in w for k in FINANCE_KEYWORDS):
+                continue
             num = it.get("num") or it.get("raw_hot") or 0
             if w:
                 link = "https://s.weibo.com/weibo?q=" + urllib.parse.quote(w)
                 _add(items, "微博热搜", w, link, "", num)
+                count += 1
+                if count >= 8:
+                    break
     except Exception as e:
         print("微博 失败:", e)
     return items
@@ -226,32 +234,71 @@ def fetch_weibo():
 # 汇总
 # ============================================================
 def build_hotlist(extra_items=None, top_n=12):
-    """合并 4 个自动源，按 heat 降序取 top_n（默认 12 条最爆），
+    """合并 4 个自动源，公平分配后按热度排序取 top_n（默认 12 条最爆）。
 
-    种子账号（第 5 源）不参与热度排序，单独返回 seedItems，
-    始终展示在自动热榜之后、可被单选。
+    策略「每源保底 + 热度排序」：
+      - 每个自动源至少取 3 条（有则取，无则跳过）
+      - 剩余名额按全局热度降序补满
+    种子账号（第 5 源）不参与热度排序，单独返回 seedItems。
     返回 { "fetchedAt": "...", "items": [...top_n 自动源...], "seedItems": [...] }
     """
-    items = []
+    # 按源分组
+    by_source = {}
+    src_name_map = {
+        "fetch_douyin_finance": "抖音财经",
+        "fetch_cailianpress": "财联社头条",
+        "fetch_36kr": "36氪热榜",
+        "fetch_weibo": "微博热搜",
+    }
     for fn in (fetch_douyin_finance, fetch_cailianpress, fetch_36kr, fetch_weibo):
         try:
-            items += fn()
+            src_items = fn()
         except Exception as e:
             print("源执行异常:", fn.__name__, e)
+            src_items = []
+        src_name = src_name_map.get(fn.__name__, fn.__name__)
+        # 给无热度条目一个基于排名的虚拟热度（确保不全部为0被挤出）
+        for rank, it in enumerate(src_items):
+            if not (it.get("heat") and it["heat"] > 0):
+                it["heat"] = 100000 - rank * 100
+        by_source[src_name] = src_items
 
-    # 去重（按标题）
-    seen, uniq = set(), []
-    for it in items:
-        k = it["title"]
-        if k not in seen:
-            seen.add(k)
-            uniq.append(it)
+    # 全局去重（按标题）
+    seen_titles = set()
+    for name in by_source:
+        uniq = []
+        for it in by_source[name]:
+            if it["title"] not in seen_titles:
+                seen_titles.add(it["title"])
+                uniq.append(it)
+        by_source[name] = uniq
 
-    # 按热度降序；无热度的源排在真实热榜之后
-    def _sort_key(x):
-        return x["heat"] if (x["heat"] and x["heat"] > 0) else 0
-    uniq.sort(key=_sort_key, reverse=True)
-    top = uniq[:top_n]
+    # 第一步：每源保底取前 3 条
+    picked = []
+    for name in by_source:
+        src = sorted(by_source[name], key=lambda x: x.get("heat", 0), reverse=True)[:3]
+        picked.extend(src)
+
+    # 第二步：剩余所有条目合并，按热度降序
+    remainder = []
+    already_picked = {it["title"] for it in picked}
+    for name in by_source:
+        for it in by_source[name]:
+            if it["title"] not in already_picked:
+                remainder.append(it)
+    remainder.sort(key=lambda x: x.get("heat", 0), reverse=True)
+
+    # 合并：保底 + 补满到 top_n
+    all_items = picked + remainder
+
+    # 最终全局去重（防止跨源重复）
+    seen_final, final = set(), []
+    for it in all_items:
+        if it["title"] not in seen_final:
+            seen_final.add(it["title"])
+            final.append(it)
+
+    top = final[:top_n]
 
     # 种子账号（第 5 源）：手动补充，单独成组
     seed = []
