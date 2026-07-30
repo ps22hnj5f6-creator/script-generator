@@ -729,6 +729,20 @@
   .hot-selected-display { margin-top: 6px; padding: 8px 10px; border: 1px dashed var(--border); border-radius: 8px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
   .hot-selected-display strong { color: var(--text-primary); }
 
+  /* 热点获取时间 */
+  .hot-fetched-at { font-size: 12px; color: var(--text-tertiary); margin: 4px 0 2px; }
+  .hot-fetched-at b { color: var(--accent); font-weight: 600; }
+
+  /* 卡片内布局：排名 + 标题 + 元信息 */
+  .hot-card .hot-top { display: flex; align-items: flex-start; gap: 8px; }
+  .hot-card .hot-rank { flex-shrink: 0; width: 20px; height: 20px; border-radius: 6px; background: rgba(99,102,241,.12); color: var(--accent); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .hot-card .hot-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 11px; margin-top: 2px; padding-left: 28px; }
+  .hot-card .hot-time { color: var(--text-tertiary); white-space: nowrap; }
+  .hot-card .hot-time::before { content: '🕐 '; }
+  .hot-card .hot-heat { color: #e6794a; white-space: nowrap; font-weight: 500; }
+  .hot-section-label { font-size: 12px; color: var(--text-tertiary); margin: 10px 0 4px; padding-top: 8px; border-top: 1px dashed var(--border); font-weight: 600; }
+  .hot-section-label:first-child { border-top: none; padding-top: 0; }
+
   /* 主页模式：2大类类型按钮 */
   .type-category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .type-cat-btn { padding: 10px 8px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--card-bg); color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; text-align: center; line-height: 1.4; }
@@ -3251,94 +3265,164 @@ onBind('modeDrain','click', () => {
   renderTypeGrid();
 });
 
-// ----- 今日热榜：自动拉取 + 人工勾选 -----
+// ----- 今日热榜：实时拉取（5源） + 单选 + 种子账号手动补充 -----
 const HOTLIST_URL = 'hotlist.json';
-let _hotItems = [];          // 当前拉取到的热榜条目
-let _hotSelectedIdx = -1;    // 单选：当前选中的条目下标（-1 未选）
+let _hotAutoItems = [];       // 服务端实时返回的自动源条目（抖音/财联社/36氪/微博）
+let _hotSeedItems = [];       // 种子账号（第5源）手动粘贴的条目
+let _hotItems = [];           // 渲染/选择用：_hotAutoItems + _hotSeedItems 合并
+let _hotSelectedTitle = '';   // 单选：按标题记录（抗重渲染更稳定）
+let _hotFetchedAt = '';       // 热点获取时间
 
-// 内置兜底：本地预览（file:// 协议下 fetch 被浏览器禁止）或线上未部署热榜时，
-// 仍能渲染列表，保证功能可演示；线上 fetch 成功会用真实热榜覆盖。
+// 热度格式化：11088975 -> "1109万"
+function fmtHeat(h) {
+  h = Number(h) || 0;
+  if (h <= 0) return '';
+  if (h >= 10000) {
+    const w = h / 10000;
+    return '🔥 ' + (w >= 100 ? Math.round(w) : w.toFixed(1).replace(/\.0$/, '')) + '万';
+  }
+  return '🔥 ' + h;
+}
+
+// 内置兜底：线上 /api/hotlist 与 hotlist.json 都失败时才用（本地预览等场景）
 const FALLBACK_HOTLIST = [
-  { source: '抖音热点榜', title: '央行宣布降准0.5个百分点 释放长期资金约1万亿', category: '抖音财经', url: '' },
-  { source: '抖音热点榜', title: 'A股三大指数集体收涨 两市成交额重回万亿', category: '抖音财经', url: '' },
-  { source: '爱股票', title: '半导体板块盘中异动 设备材料方向资金流入明显', category: '爱股票要闻', url: '' },
-  { source: '爱股票', title: '北向资金今日净买入 医药生物板块居首', category: '爱股票要闻', url: '' },
-  { source: '36氪', title: 'AI算力租赁价格年内翻倍 中小厂商承压寻求转型', category: '36氪热榜', url: '' },
-  { source: '36氪', title: '新能源补贴退坡传闻发酵 整车产业链短期承压', category: '36氪热榜', url: '' }
+  { source: '抖音财经', title: '美联储维持利率不变 鲍威尔重申通胀风险', url: '', time: '', heat: 11088975 },
+  { source: '抖音财经', title: '韩国股市暴跌背后的真相 外资加速撤离', url: '', time: '', heat: 9166486 },
+  { source: '财联社头条', title: '央行开展逆回购操作 维护月末流动性合理充裕', url: '', time: '', heat: 0 },
+  { source: '财联社头条', title: '证监会：稳妥推进资本市场改革开放', url: '', time: '', heat: 0 },
+  { source: '36氪热榜', title: 'AI 算力租赁价格年内上涨 中小厂商承压', url: '', time: '2026-07-30 10:12', heat: 0 },
+  { source: '36氪热榜', title: '新能源汽车补贴退坡传闻发酵 产业链短期承压', url: '', time: '2026-07-30 09:40', heat: 0 },
+  { source: '微博热搜', title: 'A股科技退潮 半导体板块集体回调', url: '', time: '', heat: 1426917 },
+  { source: '微博热搜', title: '多地出台消费刺激政策 楼市回暖信号', url: '', time: '', heat: 975051 }
 ];
 
-// 渲染弹窗热榜列表（单选卡片 + 来源 + 链接）
-function renderHotModalList(items) {
-  _hotItems = items || [];
+// 把种子文本框内容解析为条目
+function parseSeedItems() {
+  const raw = (document.getElementById('hotSeedInput')?.value || '');
+  return raw.split('\n').map(s => s.trim()).filter(Boolean)
+    .map(t => ({ source: '种子账号', title: t, url: '', time: '', heat: 0 }));
+}
+
+// 合并自动源 + 种子源，重渲染
+function rebuildHotItems() {
+  _hotSeedItems = parseSeedItems();
+  _hotItems = [..._hotAutoItems, ..._hotSeedItems];
+  renderHotModalList();
+}
+
+// 渲染弹窗列表（单选卡片：排名 + 标题 + 来源 + 时间 + 热度 + 链接）
+function renderHotModalList() {
   const box = document.getElementById('hotModalList');
-  if (!_hotItems.length) { box.innerHTML = '<div class="hot-empty">热榜为空，可手动补充</div>'; return; }
-  box.innerHTML = _hotItems.map((it, i) => {
-    const sel = (i === _hotSelectedIdx) ? ' selected' : '';
+  if (!_hotItems.length) {
+    box.innerHTML = '<div class="hot-empty">暂无热榜，点上方「获取最新热点」拉取实时数据，或在下方粘贴种子账号标题</div>';
+    return;
+  }
+  let html = '';
+  let rank = 0;
+  let seedStarted = false;
+  _hotItems.forEach((it) => {
+    // 自动源与种子源之间插入分组标签
+    if (it.source === '种子账号' && !seedStarted) {
+      seedStarted = true;
+      html += '<div class="hot-section-label">🌱 种子账号（手动粘贴，第5源）</div>';
+    }
+    rank++;
+    const sel = (it.title === _hotSelectedTitle) ? ' selected' : '';
     const link = it.url
-      ? `<a class="hot-link" href="${escapeHtml(it.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">原文链接</a>`
+      ? `<a class="hot-link" href="${escapeHtml(it.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">原文</a>`
       : '';
-    return `<div class="hot-card${sel}" data-idx="${i}" onclick="selectHotCard(${i})">
-      <div class="hot-title">${escapeHtml(it.title || '')}</div>
-      <div class="hot-meta"><span class="hot-source">${escapeHtml(it.source || '未知来源')}</span>${link}</div>
+    const time = it.time ? `<span class="hot-time">${escapeHtml(it.time)}</span>` : `<span class="hot-time">实时</span>`;
+    const heat = fmtHeat(it.heat);
+    const heatHtml = heat ? `<span class="hot-heat">${heat}</span>` : '';
+    const rankBadge = it.source === '种子账号' ? '' : `<span class="hot-rank">${rank}</span>`;
+    html += `<div class="hot-card${sel}" data-title="${escapeHtml(it.title)}" onclick="selectHotCard(this)">
+      <div class="hot-top">${rankBadge}<div class="hot-title">${escapeHtml(it.title || '')}</div></div>
+      <div class="hot-meta"><span class="hot-source">${escapeHtml(it.source || '未知来源')}</span>${time}${heatHtml}${link}</div>
     </div>`;
-  }).join('');
+  });
+  box.innerHTML = html;
 }
 
-// 单选：点击卡片选中
-function selectHotCard(i) {
-  _hotSelectedIdx = i;
+// 单选：点击卡片选中（按标题）
+function selectHotCard(cardEl) {
+  _hotSelectedTitle = cardEl.getAttribute('data-title') || '';
   document.querySelectorAll('#hotModalList .hot-card').forEach(c => c.classList.remove('selected'));
-  const card = document.querySelector('#hotModalList .hot-card[data-idx="' + i + '"]');
-  if (card) card.classList.add('selected');
+  cardEl.classList.add('selected');
 }
 
-// 取选中的热点 + 手动补充，作为生成输入
+// 取选中的热点（单选，仅一条）
 function getSelectedHotTopics() {
-  const topic = (_hotSelectedIdx >= 0 && _hotItems[_hotSelectedIdx]) ? _hotItems[_hotSelectedIdx].title : '';
-  const manual = (document.getElementById('hotManualInput')?.value || '')
-    .split('\n').map(s => s.trim()).filter(Boolean);
-  return [topic, ...manual].filter(Boolean);
+  return _hotSelectedTitle ? [_hotSelectedTitle] : [];
 }
 
-// 拉取热榜（写入弹窗列表）
+// 拉取热榜：优先 /api/hotlist 实时接口，失败回退 hotlist.json，再失败用兜底
 async function fetchHotlist() {
   const btn = document.getElementById('btnFetchHotModal');
-  if (btn) btn.textContent = '⏳ 拉取中...';
+  const oldText = btn ? btn.textContent : '';
+  if (btn) btn.textContent = '⏳ 获取中...';
   try {
-    const res = await fetch(HOTLIST_URL + '?t=' + Date.now());
-    if (!res.ok) throw new Error('fetch-fail');
+    const res = await fetch('/api/hotlist?t=' + Date.now());
+    if (!res.ok) throw new Error('api-fail');
     const data = await res.json();
     const items = (data.items || []).filter(it => it && it.title);
     if (!items.length) throw new Error('empty');
-    renderHotModalList(items);
-    if (_hotSelectedIdx >= items.length) _hotSelectedIdx = -1;
-    showToast('✅ 已拉取 ' + items.length + ' 条热榜，请单选一条');
+    _hotAutoItems = items;
+    _hotFetchedAt = data.fetchedAt || '';
+    rebuildHotItems();
+    document.getElementById('hotFetchedAt').textContent = _hotFetchedAt || '刚刚';
+    showToast('✅ 已实时获取 ' + items.length + ' 条热榜（最近24h最爆），请单选一条');
   } catch (err) {
-    // 本地预览 file:// 下 fetch 必失败，或线上热榜暂未部署 —— 用内置示例兜底渲染
-    renderHotModalList(FALLBACK_HOTLIST);
-    showToast('⚠️ 未读到线上热榜（本地预览），已加载示例数据');
+    // 回退 1：hotlist.json 每日快照
+    try {
+      const res2 = await fetch(HOTLIST_URL + '?t=' + Date.now());
+      if (!res2.ok) throw new Error('snap-fail');
+      const data2 = await res2.json();
+      const items2 = (data2.items || []).filter(it => it && it.title);
+      if (!items2.length) throw new Error('snap-empty');
+      _hotAutoItems = items2;
+      _hotFetchedAt = data2.updated_at || '';
+      rebuildHotItems();
+      document.getElementById('hotFetchedAt').textContent = (_hotFetchedAt || '—') + '（快照）';
+      showToast('⚠️ 实时接口不可用，已加载每日快照，点「获取」稍后重试');
+    } catch (err2) {
+      // 回退 2：内置示例
+      _hotAutoItems = FALLBACK_HOTLIST;
+      _hotFetchedAt = '';
+      rebuildHotItems();
+      document.getElementById('hotFetchedAt').textContent = '示例数据（接口不可用）';
+      showToast('⚠️ 热点接口暂不可用，已加载示例数据');
+    }
   } finally {
-    if (btn) btn.textContent = '⬇️ 拉取热榜';
+    if (btn) btn.textContent = '⬇️ 获取最新热点（实时刷新）';
   }
 }
 
 // 事件绑定
-onBind('btnFetchHotModal','click', fetchHotlist);
-onBind('btnOpenHotModal','click', () => {
+onBind('btnFetchHotModal', 'click', fetchHotlist);
+onBind('btnOpenHotModal', 'click', () => {
   document.getElementById('hotModal').classList.add('open');
+  // 默认自动拉取一次，展示最近24h最爆的12条
+  if (!_hotAutoItems.length) fetchHotlist();
 });
-onBind('btnConfirmHot','click', () => {
+onBind('btnConfirmHot', 'click', () => {
   document.getElementById('hotModal').classList.remove('open');
   updateHotSelectedDisplay();
 });
+// 种子文本框输入 → 即时并入候选（保留已选）
+onBind('hotSeedInput', 'input', () => {
+  const prev = _hotSelectedTitle;
+  rebuildHotItems();
+  if (prev && !_hotItems.some(it => it.title === prev)) _hotSelectedTitle = '';
+});
 
-// 侧边栏展示已选热点（来源 + 链接）
+// 侧边栏展示已选热点（来源 + 链接 + 获取时间）
 function updateHotSelectedDisplay() {
   const box = document.getElementById('hotSelectedDisplay');
-  if (_hotSelectedIdx >= 0 && _hotItems[_hotSelectedIdx]) {
-    const it = _hotItems[_hotSelectedIdx];
-    const link = it.url ? ` <a class="hot-link" href="${escapeHtml(it.url)}" target="_blank" rel="noopener">🔗原文</a>` : '';
-    box.innerHTML = `<strong>${escapeHtml(it.title)}</strong><br><span class="hot-source" style="display:inline-block;margin-top:4px;">${escapeHtml(it.source || '')}</span>${link}`;
+  const sel = _hotItems.find(it => it.title === _hotSelectedTitle);
+  if (sel) {
+    const link = sel.url ? ` <a class="hot-link" href="${escapeHtml(sel.url)}" target="_blank" rel="noopener">🔗原文</a>` : '';
+    const when = _hotFetchedAt ? `<div style="margin-top:4px;color:var(--text-tertiary);font-size:11px;">获取时间：${escapeHtml(_hotFetchedAt)}</div>` : '';
+    box.innerHTML = `<strong>${escapeHtml(sel.title)}</strong><br><span class="hot-source" style="display:inline-block;margin-top:4px;">${escapeHtml(sel.source || '')}</span>${link}${when}`;
   } else {
     box.innerHTML = '<span class="hot-empty">尚未选择热点</span>';
   }
@@ -4400,14 +4484,15 @@ window.runTests = function() {
 
 <!-- 热点选择弹窗（单选 + 来源 + 链接） -->
 <div class="modal-overlay" id="hotModal">
-  <div class="modal" style="max-width:600px;">
-    <h2>🔥 选择今日热点</h2>
-    <div class="subtitle">单选一条作为今日选题，点击卡片即可选中；下方显示来源与原文链接，方便核实</div>
-    <button class="btn-sm" id="btnFetchHotModal" style="margin-bottom:4px;">⬇️ 拉取热榜</button>
-    <div class="hot-modal-list" id="hotModalList"><div class="hot-empty">点「拉取热榜」获取热点，或手动补充</div></div>
-    <details style="margin-top:4px;">
-      <summary style="font-size:12px;color:var(--text-tertiary);cursor:pointer;">➕ 手动补充热点（每行一条，与所选热点合并）</summary>
-      <textarea id="hotManualInput" class="hot-input" rows="2" placeholder="每行一条，例如：&#10;白酒板块异动 茅台盘中翻红"></textarea>
+  <div class="modal" style="max-width:620px;">
+    <h2>🔥 选择今日热点（单选）</h2>
+    <div class="subtitle">默认展示最近24h最爆的12条（附时间与热度），点击卡片单选一条；下方「种子账号」可粘贴9个对标账号当日视频标题作为第5源</div>
+    <div class="hot-fetched-at">热点获取时间：<b id="hotFetchedAt">尚未获取</b></div>
+    <button class="btn-sm" id="btnFetchHotModal" style="margin-bottom:6px;">⬇️ 获取最新热点（实时刷新）</button>
+    <div class="hot-modal-list" id="hotModalList"><div class="hot-empty">点「获取最新热点」拉取实时热榜</div></div>
+    <details style="margin-top:6px;">
+      <summary style="font-size:12px;color:var(--text-tertiary);cursor:pointer;">➕ 种子账号当日视频标题（第5源，每行一条，手动粘贴）</summary>
+      <textarea id="hotSeedInput" class="hot-input" rows="3" placeholder="每行一条，例如：&#10;白酒板块异动 茅台盘中翻红&#10;半导体国产化加速 设备订单饱满"></textarea>
     </details>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="document.getElementById('hotModal').classList.remove('open')">取消</button>

@@ -1,24 +1,34 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-每日 15:00（北京时间）拉取三源热榜，归一化后写入 hotlist.json。
-数据源（用户指定）：
-  1. 抖音热点榜 —— 筛选其中财经相关条目
-  2. 爱股票 24h 热门要闻
+热榜抓取库 + 每日快照脚本
+================================
+5 大数据源（用户指定）：
+  1. 抖音热榜 —— 筛选其中财经/股市相关条目
+  2. 财联社头条
   3. 36氪 24小时热榜
-每个源独立 try/except，单个源失败不影响其他源。
-主页视频"无时效常青内容"由运营生成时选类型决定，本脚本只负责时效性热榜。
+  4. 微博热搜 —— 社会榜 + 科技榜
+  5. 种子账号当日视频标题（由前端手动粘贴，本脚本不自动抓取）
+
+每条归一化为：
+  { "source": str, "title": str, "url": str, "time": str, "heat": int }
+
+build_hotlist() 把所有源合并、按 heat 降序、去重、取前 12 条（最爆），
+附 fetchedAt（热点获取时间）返回。
+
+用法：
+  - 作为库被 server.py 导入： from fetch_hotlist import build_hotlist
+  - 作为脚本每日运行： python fetch_hotlist.py  → 写 hotlist.json（兜底快照）
 """
-import urllib.request
-import urllib.parse
+
 import json
 import re
 import datetime
+import urllib.request
+import urllib.parse
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
-
-ITEMS = []
 
 # 抖音热点榜 → 只保留与财经/股市相关的条目
 FINANCE_KEYWORDS = ["股", "A股", "美股", "港股", "基金", "财经", "央行", "美联储",
@@ -26,107 +36,242 @@ FINANCE_KEYWORDS = ["股", "A股", "美股", "港股", "基金", "财经", "央�
                     "上市", "IPO", "融资", "投资", "理财", "黄金", "原油", "券商",
                     "白酒", "新能源", "半导体", "光伏", "储能", "科技", "营收",
                     "利润", "业绩", "退市", "证监会", "监管", "债", "楼市", "房价",
-                    "消费", "企业", "公司", "ChatGPT", "AI", "算力", "锂", "稀土"]
+                    "消费", "企业", "公司", "ChatGPT", "AI", "算力", "锂", "稀土",
+                    "债券", "期货", "券商", "银行", "保险", "地产"]
 
 
-def get_json(url, timeout=15):
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
+def _get_json(url, timeout=15, headers=None):
+    h = {"User-Agent": UA}
+    if headers:
+        h.update(headers)
+    req = urllib.request.Request(url, headers=h)
     with urllib.request.urlopen(req, timeout=timeout) as r:
-        return json.loads(r.read().decode("utf-8"))
+        raw = r.read().decode("utf-8", "ignore")
+    return json.loads(raw)
 
 
-def get_text(url, timeout=15):
+def _get_text(url, timeout=15):
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read().decode("utf-8", "ignore")
 
 
-def add(source, title, category, url=""):
-    title = (title or "").strip()
-    if title and len(title) <= 60:
-        ITEMS.append({"source": source, "title": title, "category": category, "url": url})
-
-
-# 1) 抖音热点榜（筛选财经相关）
-try:
-    d = get_json("https://www.iesdouyin.com/web/api/v2/hotsearch/billboard/word/")
-    for it in d.get("word_list", [])[:50]:
-        w = it.get("word") or ""
-        if any(k in w for k in FINANCE_KEYWORDS):
-            # 抖音热榜无原文链接，提供抖音搜索链接方便核实
-            link = "https://www.douyin.com/search/" + urllib.parse.quote(w)
-            add("抖音热点榜", w, "抖音财经", link)
-except Exception as e:
-    print("抖音热点榜 失败:", e)
-
-# 2) 爱股票 24h 热门要闻
-try:
-    ok = False
-    for ep in [
-        "https://www.aigupiao.com/api/news/hot?type=24h",
-        "https://www.aigupiao.com/api/article/hot",
-    ]:
-        try:
-            d = get_json(ep)
-            news = (d.get("data", {}).get("list")
-                    or d.get("data")
-                    or d.get("list")
-                    or d.get("items") or [])
-            for it in news[:15]:
-                t = (it.get("title") or it.get("content") or it.get("name") or "").strip()
-                u = (it.get("url") or it.get("link") or it.get("article_url") or "").strip()
-                if t:
-                    add("爱股票", t, "爱股票要闻", u)
-            if news:
-                ok = True
-                break
-        except Exception:
-            continue
-    if not ok:
-        raise Exception("爱股票所有端点均失败")
-except Exception as e:
-    print("爱股票 失败:", e)
-
-# 3) 36氪 24小时热榜（优先 API，失败则抓首页）
-try:
-    ok = False
+def _fmt_time(raw):
+    """把各种时间格式统一成 'YYYY-MM-DD HH:MM'，无法解析返回 ''。"""
+    if not raw:
+        return ""
     try:
-        d = get_json("https://36kr.com/api/newsflash")
-        for it in (d.get("data", {}).get("items") or [])[:15]:
-            t = (it.get("title") or it.get("content") or "").strip()
-            u = (it.get("item_url") or it.get("url") or it.get("news_url") or "").strip()
-            # 36氪快讯链接转绝对地址
-            if u and not u.startswith("http"):
-                u = "https://36kr.com" + u
-            if t:
-                add("36氪", t, "36氪热榜", u)
-        ok = True
+        # 10位/13位时间戳
+        if isinstance(raw, (int, float)):
+            s = float(raw)
+            if s > 1e12:
+                s = s / 1000
+            return datetime.datetime.fromtimestamp(s).strftime("%Y-%m-%d %H:%M")
+        s = str(raw).strip()
+        if s.isdigit():
+            v = float(s)
+            if v > 1e12:
+                v = v / 1000
+            return datetime.datetime.fromtimestamp(v).strftime("%Y-%m-%d %H:%M")
+        # ISO / 常见字符串
+        s2 = s.replace("T", " ").replace("Z", "").strip()
+        m = re.match(r"(\d{4}-\d{2}-\d{2})[ \.]?(\d{2}:\d{2})?", s2)
+        if m:
+            return (m.group(1) + " " + (m.group(2) or "00:00")).strip()
     except Exception:
         pass
-    if not ok:
-        html = get_text("https://36kr.com/")
-        titles = re.findall(r'class="[^"]*article-item-title[^"]*"[^>]*>(.*?)</a>', html)
-        for t in titles[:15]:
-            t = re.sub(r"<[^>]+>", "", t).strip()
-            if t:
-                add("36氪", t, "36氪热榜")
-except Exception as e:
-    print("36氪 失败:", e)
+    return ""
 
-# 去重（按标题）
-seen, uniq = set(), []
-for it in ITEMS:
-    k = it["title"]
-    if k not in seen:
-        seen.add(k)
-        uniq.append(it)
-ITEMS = uniq[:40]
 
-out = {
-    "updated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-    "items": ITEMS,
-}
-with open("hotlist.json", "w", encoding="utf-8") as f:
-    json.dump(out, f, ensure_ascii=False, indent=2)
-print(f"写入 hotlist.json，共 {len(ITEMS)} 条（来源："
-      + "/".join(sorted({i['source'] for i in ITEMS})) + "）")
+def _add(items, source, title, url="", time="", heat=0):
+    title = (title or "").strip()
+    if title and len(title) <= 80:
+        try:
+            heat = int(heat) if heat else 0
+        except Exception:
+            heat = 0
+        items.append({
+            "source": source,
+            "title": title,
+            "url": (url or "").strip(),
+            "time": _fmt_time(time),
+            "heat": heat,
+        })
+
+
+# ============================================================
+# 1) 抖音热榜（财经筛选）
+# ============================================================
+def fetch_douyin_finance():
+    items = []
+    try:
+        d = _get_json("https://www.iesdouyin.com/web/api/v2/hotsearch/billboard/word/")
+        for it in d.get("word_list", [])[:60]:
+            w = it.get("word") or ""
+            if any(k in w for k in FINANCE_KEYWORDS):
+                hv = it.get("hot_value") or 0
+                link = "https://www.douyin.com/search/" + urllib.parse.quote(w)
+                _add(items, "抖音财经", w, link, "", hv)
+    except Exception as e:
+        print("抖音财经 失败:", e)
+    return items
+
+
+# ============================================================
+# 2) 财联社头条
+# ============================================================
+def fetch_cailianpress():
+    items = []
+    endpoints = [
+        "https://www.cls.cn/api/flash",                      # 快讯
+        "https://www.cls.cn/nodeapi/telegraph?refresh=0&num=30",  # 电报
+    ]
+    for ep in endpoints:
+        try:
+            d = _get_json(ep)
+            # 快讯结构： data.flash_list[] 或 data.list[]
+            arr = (d.get("data", {}).get("flash_list")
+                   or d.get("data", {}).get("list")
+                   or d.get("data", {}).get("items")
+                   or d.get("items") or [])
+            for it in arr[:20]:
+                t = (it.get("title") or it.get("content") or it.get("brief") or "").strip()
+                u = (it.get("url") or it.get("link") or "").strip()
+                if u and not u.startswith("http"):
+                    u = "https://www.cls.cn" + u
+                tm = it.get("updated_at") or it.get("time") or it.get("created_at") or ""
+                if t:
+                    _add(items, "财联社头条", t, u, tm, 0)
+            if items:
+                break
+        except Exception as e:
+            print("财联社端点", ep, "失败:", e)
+            continue
+    # 兜底：直接抓取财联社首页头条（首页含当日真实头条）
+    if not items:
+        try:
+            html = _get_text("https://www.cls.cn/")
+            # 抓取形如 <a ... href="/...">标题</a> 的链接文本，过滤长度
+            for m in re.finditer(r'<a[^>]*href="(/[^"]+)"[^>]*>([^<]{10,40})</a>', html):
+                url, t = m.group(1), m.group(2).strip()
+                if t and ("article" in url or re.search(r"/\d{5,}", url)):
+                    _add(items, "财联社头条", t, "https://www.cls.cn" + url, "", 0)
+                if len(items) >= 15:
+                    break
+        except Exception as e:
+            print("财联社首页抓取失败:", e)
+    return items
+
+
+# ============================================================
+# 3) 36氪 24小时热榜
+# ============================================================
+def fetch_36kr():
+    items = []
+    try:
+        ok = False
+        try:
+            d = _get_json("https://36kr.com/api/newsflash")
+            for it in (d.get("data", {}).get("items") or [])[:20]:
+                t = (it.get("title") or it.get("content") or "").strip()
+                u = (it.get("item_url") or it.get("url") or "").strip()
+                if u and not u.startswith("http"):
+                    u = "https://36kr.com" + u
+                hv = it.get("heat") or it.get("pv") or 0
+                tm = it.get("published_at") or it.get("created_at") or ""
+                if t:
+                    _add(items, "36氪热榜", t, u, tm, hv)
+            ok = True
+        except Exception:
+            pass
+        if not ok:
+            html = _get_text("https://36kr.com/")
+            titles = re.findall(r'class="[^"]*article-item-title[^"]*"[^>]*>(.*?)</a>', html)
+            for t in titles[:15]:
+                t = re.sub(r"<[^>]+>", "", t).strip()
+                if t:
+                    _add(items, "36氪热榜", t, "", "", 0)
+    except Exception as e:
+        print("36氪 失败:", e)
+    return items
+
+
+# ============================================================
+# 4) 微博热搜（社会榜 + 科技榜）
+# ============================================================
+def fetch_weibo():
+    """微博热搜（社会榜 + 科技榜）。
+    注：微博公开接口未对每条打「社会/科技」标签，这里取热搜总榜按热度排序的前 N 条，
+    其中天然包含社会与科技热点；具体选用哪条由前端单选决定。"""
+    items = []
+    try:
+        d = _get_json("https://weibo.com/ajax/side/hotSearch",
+                      headers={"Referer": "https://weibo.com/",
+                               "Accept": "application/json, text/plain, */*"})
+        arr = (d.get("data") or {}).get("realtime") or []
+        # 按热度 num 降序，取前 10
+        arr = sorted(arr, key=lambda x: (x.get("num") or 0), reverse=True)[:10]
+        for it in arr:
+            w = it.get("word") or ""
+            num = it.get("num") or it.get("raw_hot") or 0
+            if w:
+                link = "https://s.weibo.com/weibo?q=" + urllib.parse.quote(w)
+                _add(items, "微博热搜", w, link, "", num)
+    except Exception as e:
+        print("微博 失败:", e)
+    return items
+
+
+# ============================================================
+# 汇总
+# ============================================================
+def build_hotlist(extra_items=None, top_n=12):
+    """合并 4 个自动源，按 heat 降序取 top_n（默认 12 条最爆），
+
+    种子账号（第 5 源）不参与热度排序，单独返回 seedItems，
+    始终展示在自动热榜之后、可被单选。
+    返回 { "fetchedAt": "...", "items": [...top_n 自动源...], "seedItems": [...] }
+    """
+    items = []
+    for fn in (fetch_douyin_finance, fetch_cailianpress, fetch_36kr, fetch_weibo):
+        try:
+            items += fn()
+        except Exception as e:
+            print("源执行异常:", fn.__name__, e)
+
+    # 去重（按标题）
+    seen, uniq = set(), []
+    for it in items:
+        k = it["title"]
+        if k not in seen:
+            seen.add(k)
+            uniq.append(it)
+
+    # 按热度降序；无热度的源排在真实热榜之后
+    def _sort_key(x):
+        return x["heat"] if (x["heat"] and x["heat"] > 0) else 0
+    uniq.sort(key=_sort_key, reverse=True)
+    top = uniq[:top_n]
+
+    # 种子账号（第 5 源）：手动补充，单独成组
+    seed = []
+    if extra_items:
+        for line in extra_items:
+            line = (line or "").strip()
+            if line:
+                seed.append({"source": "种子账号", "title": line, "url": "",
+                             "time": "", "heat": 0})
+
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    return {"fetchedAt": now, "items": top, "seedItems": seed}
+
+
+# ============================================================
+# 每日快照（GitHub Actions 调用）：写 hotlist.json 作为兜底
+# ============================================================
+if __name__ == "__main__":
+    data = build_hotlist()
+    with open("hotlist.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    srcs = "/".join(sorted({i["source"] for i in data["items"]})) or "无"
+    print(f"写入 hotlist.json：共 {len(data['items'])} 条，来源={srcs}，获取时间={data['fetchedAt']}")

@@ -25,6 +25,10 @@ PORT = int(os.environ.get('PORT', '3001'))
 BASE_DIR = Path(__file__).parent.resolve()
 HTML_FILE = BASE_DIR / '短视频稿生成器.html'
 
+# 让 fetch_hotlist 模块可被导入（同目录）
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 
 class Handler(BaseHTTPRequestHandler):
     """统一处理静态文件托管 + DeepSeek API 代理"""
@@ -86,9 +90,14 @@ class Handler(BaseHTTPRequestHandler):
             error_json = json.dumps({'error': {'message': f'代理请求失败: {e}'}})
             self.wfile.write(error_json.encode())
 
-    # ====== 静态文件服务 ======
+    # ====== 热榜实时接口（点击「获取」实时刷新）======
     def do_GET(self):
-        file_path = self.path
+        file_path = self.path.split('?', 1)[0]
+
+        # 热榜实时拉取：聚合 5 源（抖音财经/财联社/36氪/微博 + 种子账号手动补充）
+        if file_path == '/api/hotlist':
+            self._serve_hotlist()
+            return
 
         # 根路径 → HTML
         if file_path in ('/', '/index.html'):
@@ -130,9 +139,34 @@ class Handler(BaseHTTPRequestHandler):
         except FileNotFoundError:
             self.send_error(404, 'Not Found')
 
+    # ====== 热榜实时聚合 ======
+    def _serve_hotlist(self):
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        try:
+            from fetch_hotlist import build_hotlist
+            data = build_hotlist()
+            # 种子账号由前端本地粘贴，服务端不预置；字段保留为空数组
+            if 'seedItems' not in data:
+                data['seedItems'] = []
+            self.wfile.write(json.dumps(data, ensure_ascii=False).encode('utf-8'))
+        except Exception as e:
+            # 实时抓取整体失败 → 回退到每日快照 hotlist.json
+            try:
+                snap = (BASE_DIR / 'hotlist.json').read_text(encoding='utf-8')
+                fallback = json.loads(snap)
+                fallback['fetchedAt'] = fallback.get('updated_at', '') + '（快照兜底）'
+                self.wfile.write(json.dumps(fallback, ensure_ascii=False).encode('utf-8'))
+            except Exception:
+                err = json.dumps({'error': f'热榜获取失败: {e}', 'items': [], 'seedItems': []})
+                self.wfile.write(err.encode('utf-8'))
+
 
 def main():
-    server = HTTPServer(('127.0.0.1', PORT), Handler)
+    server = HTTPServer(('0.0.0.0', PORT), Handler)
     print(f'\n🚀 短视频稿生成器已启动')
     print(f'   访问地址: http://localhost:{PORT}')
     print(f'   按 Ctrl+C 停止\n')
