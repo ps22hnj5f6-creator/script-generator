@@ -837,7 +837,7 @@
     </div>
   </div>
   <div class="ai-config" id="aiConfig" style="display:none;">
-    <input type="password" class="api-key-input" id="apiKeyInput" placeholder="输入 DeepSeek API Key" value="">
+    <input type="password" class="api-key-input" id="apiKeyInput" placeholder="输入 DeepSeek API Key" value="sk-53ce70371aca42dcadc3c578c26727cc">
     <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px;">
       模型：DeepSeek V3（快速） · Key 仅存储在本地浏览器
     </div>
@@ -1834,6 +1834,9 @@ const DEEPSEEK_CONFIG = {
   maxTokens: 800,
   temperature: 0.85
 };
+
+// 默认 API Key（已预填，省去每次手动粘贴；用户也可随时在输入框修改）
+const DEFAULT_API_KEY = 'sk-53ce70371aca42dcadc3c578c26727cc';
 
 // ----- AI 模式状态 -----
 state.aiMode = 'template';  // 'template' | 'deepseek'
@@ -3366,6 +3369,10 @@ try {
   if (savedKey) {
     state.aiApiKey = savedKey;
     document.getElementById('apiKeyInput').value = savedKey;
+  } else if (DEFAULT_API_KEY) {
+    // 无本地保存 → 使用预填默认 Key
+    state.aiApiKey = DEFAULT_API_KEY;
+    document.getElementById('apiKeyInput').value = DEFAULT_API_KEY;
   }
   if (savedProxy !== null) {
     state.useProxy = savedProxy !== '0';
