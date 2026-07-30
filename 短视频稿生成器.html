@@ -2054,19 +2054,21 @@ async function callDeepSeekAPI(systemPrompt, userPrompt) {
   try {
     response = await fetch(url, { method: 'POST', headers, body });
   } catch (fetchErr) {
-    // 代理模式下 fetch 失败 → 自动降级为直连 DeepSeek API
     if (state.useProxy && fetchErr.message && fetchErr.message.includes('fetch')) {
-      // 无论本地还是线上，都尝试直连降级
+      // 本地 file:// 环境：浏览器CORS会拦截直连api.deepseek.com，只能走代理
+      if (_isLocalEnv) {
+        throw new Error(
+          '本地模式需要启动代理才能调用 AI。\n\n' +
+          '请在终端运行：\n  node deepseek-proxy.js\n\n' +
+          '（本地浏览器禁止直接访问外部API，必须通过代理转发）\n' +
+          '错误详情：' + fetchErr.message
+        );
+      }
+      // 线上环境：代理失败时尝试直连降级
       try {
         response = await fetch(DEEPSEEK_CONFIG.baseUrl, { method: 'POST', headers, body });
       } catch (directErr) {
-        throw new Error(
-          '连接失败（代理不可用且直连也失败）。\n' +
-          (_isLocalEnv
-            ? '本地使用请启动代理: node deepseek-proxy.js\n或检查网络是否可访问 api.deepseek.com'
-            : '请检查网络连接') +
-          '\n（' + directErr.message + '）'
-        );
+        throw new Error('连接失败，请检查网络。（' + directErr.message + '）');
       }
     } else {
       throw new Error('请求失败: ' + fetchErr.message);
