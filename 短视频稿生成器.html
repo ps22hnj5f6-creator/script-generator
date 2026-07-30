@@ -835,7 +835,7 @@
   <!-- 5. 热点区域（选「热点」类型时才显示） -->
   <div id="hotSection" style="display:none;">
     <div class="section-label" style="margin-top:4px;">🔥 今日热点（单选）</div>
-    <button class="btn-primary" id="btnOpenHotModal" style="width:100%;font-size:13px;padding:9px 12px;">📋 选择今日热点</button>
+    <button class="btn-primary" id="btnOpenHotModal" style="width:100%;font-size:13px;padding:9px 12px;" onclick="document.getElementById('hotModal').classList.add('open');if(typeof fetchHotlist==='function'&&!window._hotAutoItems.length)fetchHotlist()">📋 选择今日热点</button>
     <div id="hotSelectedDisplay" class="hot-selected-display"><span class="hot-empty">尚未选择热点</span></div>
     <div class="hot-row" style="margin-top:6px;">
       <button class="btn-sm" id="btnClearPool">🧹 清去重池</button>
@@ -4488,7 +4488,7 @@ window.runTests = function() {
     <h2>🔥 选择今日热点（单选）</h2>
     <div class="subtitle">默认展示最近24h最爆的12条（附时间与热度），点击卡片单选一条；下方「种子账号」可粘贴9个对标账号当日视频标题作为第5源</div>
     <div class="hot-fetched-at">热点获取时间：<b id="hotFetchedAt">尚未获取</b></div>
-    <button class="btn-sm" id="btnFetchHotModal" style="margin-bottom:6px;">⬇️ 获取最新热点（实时刷新）</button>
+    <button class="btn-sm" id="btnFetchHotModal" style="margin-bottom:6px;" onclick="if(typeof fetchHotlist==='function')fetchHotlist()">⬇️ 获取最新热点（实时刷新）</button>
     <div class="hot-modal-list" id="hotModalList"><div class="hot-empty">点「获取最新热点」拉取实时热榜</div></div>
     <details style="margin-top:6px;">
       <summary style="font-size:12px;color:var(--text-tertiary);cursor:pointer;">➕ 种子账号当日视频标题（第5源，每行一条，手动粘贴）</summary>
@@ -4496,7 +4496,7 @@ window.runTests = function() {
     </details>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="document.getElementById('hotModal').classList.remove('open')">取消</button>
-      <button class="btn-primary" id="btnConfirmHot">确认选择</button>
+      <button class="btn-primary" id="btnConfirmHot" onclick="document.getElementById('hotModal').classList.remove('open');if(typeof updateHotSelectedDisplay==='function')updateHotSelectedDisplay();">确认选择</button>
     </div>
   </div>
 </div>
