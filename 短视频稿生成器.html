@@ -820,7 +820,7 @@
     </div>
     <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--text-secondary);cursor:pointer;">
       <input type="checkbox" id="proxyToggle" checked style="accent-color:var(--accent);">
-      使用本地代理（需先启动 node deepseek-proxy.js）
+      本地使用需先运行 node server.js 并访问 http://localhost:3001
     </label>
   </div>
 
@@ -1806,9 +1806,7 @@ state.wordCount = 'medium';           // 'short' | 'medium' | 'long'
 const _isLocalEnv = (location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
 const DEEPSEEK_CONFIG = {
   baseUrl: 'https://api.deepseek.com/chat/completions',
-  proxyUrl: _isLocalEnv
-    ? 'http://localhost:3001/chat/completions'
-    : '/chat/completions',
+  proxyUrl: '/chat/completions',  // 同源代理：本地与线上均由 server.js 托管 HTML + /chat/completions
   model: 'deepseek-chat',
   maxTokens: 800,
   temperature: 0.85
@@ -2058,9 +2056,10 @@ async function callDeepSeekAPI(systemPrompt, userPrompt) {
       // 本地 file:// 环境：浏览器CORS会拦截直连api.deepseek.com，只能走代理
       if (_isLocalEnv) {
         throw new Error(
-          '本地模式需要启动代理才能调用 AI。\n\n' +
-          '请在终端运行：\n  node deepseek-proxy.js\n\n' +
-          '（本地浏览器禁止直接访问外部API，必须通过代理转发）\n' +
+          '本地访问失败，需要启动本地服务。\n\n' +
+          '请在终端运行：\n  node server.js\n\n' +
+          '然后用浏览器打开：http://localhost:3001\n' +
+          '（不要直接双击 HTML 文件，file:// 模式浏览器禁止访问外部API）\n' +
           '错误详情：' + fetchErr.message
         );
       }
@@ -2080,9 +2079,9 @@ async function callDeepSeekAPI(systemPrompt, userPrompt) {
     const preview = (await response.text().catch(() => '')).substring(0, 200);
     if (preview.includes('<!DOCTYPE') || preview.includes('<html')) {
       throw new Error(
-        '代理返回了网页而非 API 数据。本地使用时请确认已启动代理：\n' +
-        '  node deepseek-proxy.js\n' +
-        '（如果已启动但仍报错，检查端口 3001 是否被其他程序占用）'
+        '返回了网页而非 API 数据。请确认已启动服务：\n' +
+        '  node server.js 并访问 http://localhost:3001\n' +
+        '（如果已启动但仍报错，检查端口是否被其他程序占用）'
       );
     }
     throw new Error('代理返回了非 JSON 内容 (content-type: ' + ct + ')。请确认代理正常运行。');
