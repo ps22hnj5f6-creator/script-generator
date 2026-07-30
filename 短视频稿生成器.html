@@ -1973,7 +1973,7 @@ C. 数据 → 解读 → 建议
 D. 提问 → 拆解 → 结论`;
 
   const toneGuide = `## 语气守则（说人话）
-- 大量用第二人称「你 / 老铁」，像当面聊天
+- 大量用第二人称「你 / 朋友」，像当面聊天
 - 口语虚词：哈、啊、说白了、其实、你想想
 - 短句为主，多分段，一段一行，留白制造节奏
 - 用具体数字、人名、场景增信，别空谈
@@ -1986,7 +1986,6 @@ D. 提问 → 拆解 → 结论`;
   const riskGuide = `## 合规红线（必须守）
 - 不推荐具体个股的买卖，不给买卖点，不承诺收益
 - 不提及内部消息、内幕、机构合作等违规内容
-- 文末必须带一句风险提示：「以上内容仅为个人观点，不构成投资建议，股市有风险，投资需谨慎」
 - 自动过滤禁词（系统会再处理一遍，但你尽量少用）`;
 
   const typeGuide = (HOMEPAGE_TYPES[type] && HOMEPAGE_TYPES[type].hook) || '结合今日热点做一条有价值的财经短内容';
@@ -2121,6 +2120,9 @@ async function generateWithDeepSeek(type) {
 
   const hasFW = hasForbiddenWord(text);
   let cleanText = hasFW ? censorScriptRaw(text) : text;
+
+  // 称呼统一：禁用「老铁」，替换为「朋友」
+  cleanText = cleanText.replace(/老铁/g, '朋友');
 
   cleanText = fuzzyOpportunityPlateNames(cleanText);
 
